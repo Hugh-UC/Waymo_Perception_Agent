@@ -20,7 +20,8 @@ A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini API to scrap
     - [Install the Package](#install-the-package)
     - [5. API Keys & Local Files](#5-api-keys--local-files)
     - [6. Running the Server](#6-running-the-server)
-    - [7. Initial System Setup (Web UI)](#7-initial-system-setup-web-ui)
+- [Operating Web Interface](#operating-web-interface)
+  - [Initial System Setup](#initial-system-setup)
 
 ***
 
@@ -209,21 +210,32 @@ Server runs on local loopback. Open web browser and navigate to:
 This is the frontend interface for the entire program.  
 It allows for comprehensive system **management** and **monitoring** through a web-based dashboard.
 
+***
+
+<br>
 <br>
 
-### 7. Initial System Setup (Web UI)
+# Operating Web Interface
+
+This is the frontend interface for the entire program. It allows for comprehensive system **management** and **monitoring** through a web-based dashboard.
+
+<br>
+
+## Initial System Setup
 On first launch, Global Gatekeeper forcefully redirects to Setup Wizard. Wizard configures `.env`, `params.yaml`, and `auth.json` files automatically.
 
-**Step 1: API Integration**
-* Input Gemini and NewsAPI keys generated in Step 5.
-* System builds `.env` file. Keys are masked (`***`) on future visits to prevent screen-reading leaks.
+### Step 1: API Integration
+* Input Gemini and NewsAPI keys generated in Getting Started.
+* System builds `.env` file. 
+* Keys are masked (`***`) on future visits to prevent screen-reading leaks.
 
-**Step 2: Agent Intelligence**
+### Step 2: Agent Intelligence
 * Select Primary model (e.g., `gemini-3-flash-preview`).
-* Define Fallback models for rate-limit protection. Custom models can be typed and added dynamically.
+* Define Fallback models for rate-limit protection. 
+* Custom models can be typed and added dynamically.
 * System updates `config/params.yaml`.
 
-**Step 3: Local Security**
+### Step 3: Local Security
 * Create local Admin Username and Password.
 * Password must be min 8 chars, no shell metacharacters (`&`, `|`, `;`, `$`).
 * Secures dashboard. Generates 24-hour session cookie and `config/auth.json` hash.
