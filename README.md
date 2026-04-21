@@ -1,6 +1,6 @@
 # The Waymo Perception Agent Project (Gemini AI)
 
-A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini 1.5 Pro API to scrape media sites and generate structured temporal metrics on autonomous vehicle perception.
+A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini API to scrape media sites and generate structured temporal metrics on autonomous vehicle perception.
 
 ***
 
