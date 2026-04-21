@@ -45,7 +45,7 @@ class PerceptionMetrics(BaseModel):
         description="If the person actually rode in a Waymo, rate their satisfaction 1-10. Null if they are just a bystander."
     )
 
-class DailyScrapeBatch(BaseModel):
+class ScrapeBatch(BaseModel):
     """
     The final output for a daily run, containing a list of individual perception metrics.
 
