@@ -20,7 +20,7 @@ A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini 1.5 Pro API 
     - [Install the Package](#install-the-package)
     - [5. Environment Variables](#5-environment-variables)
 
-<br>
+***
 
 ## Directory Structure:
 
