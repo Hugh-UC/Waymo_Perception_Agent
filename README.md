@@ -8,8 +8,6 @@ A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini 1.5 Pro API 
 
 ***
 
-<br>
-
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
