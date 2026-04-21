@@ -27,46 +27,54 @@ A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini API to scrap
 ```
 waymo_perception_agent/
 │
+├── config/
+│   ├── params.yaml         # Master configuration
+│   ├── settings.json       # Dynamic browser preferences backup (Auto-generated)
+│   └── auth.json           # Local admin credentials hash (Auto-generated)
+│
 ├── core/
 │   ├── __init__.py
-│   ├── schema.py         # Pydantic models (Metrics definitions)
-│   ├── agent.py          # PydanticAI agent initialization
-│   ├── graph.py          # LangGraph workflow orchestration
-│   └── utils.py          # Helper functions
+│   ├── schema.py           # Pydantic models (Metrics definitions)
+│   ├── agent.py            # PydanticAI agent initialization
+│   ├── graph.py            # LangGraph workflow orchestration
+│   └── utils.py            # Helper functions
 │
 ├── tools/
 │   ├── __init__.py
-│   ├── scraper.py        # Logic for Reddit/News API pulling
-│   └── db.py             # Logic for saving JSON/Metrics to your DB
+│   ├── scraper.py          # Logic for Reddit/News API pulling
+│   └── db.py               # Logic for saving JSON/Metrics to your DB
 │
 ├── visualization/
 │   ├── __init__.py
-│   └── dash.py           # Logic for generating daily & trend graphs
+│   └── dash.py             # Logic for generating daily & trend graphs
 │
-├── frontend/                 # All your web assets live here
+├── frontend/               # All your web assets live here
 │   ├── css/
-│   │   ├── style.css
-│   │   └── theme.css         # Dark/Light mode and alt theme styles
+│   │   ├── style.css       # Structural layout and responsive media queries
+│   │   └── theme.css       # Dark/Light mode, color variables, and alt theme styles
 │   ├── js/
-│   │   ├── api.js            # Handles talking to your Python backend
-│   │   ├── charts.js         # Logic for rendering interactive graphs
-│   │   └── settings.js       # UI validation for the YAML parameters
-│   ├── index.html            # Dashboard
-│   ├── graphs.html           # Interactive Visualizations
-│   ├── settings.html         # YAML & .env Editor
-│   ├── prompt.html           # Prompt Editor
-│   └── export.html           # CSV/Excel/PNG Exporter
+│   │   ├── api.js          # Global API SDK and routing Gatekeeper
+│   │   ├── auth.js         # Setup Wizard, login state, and password validation
+│   │   ├── charts.js       # Logic for rendering interactive graphs
+│   │   └── settings.js     # UI validation for the YAML parameters
+│   ├── index.html          # Dashboard, Login Overlay, and Setup Wizard
+│   ├── graphs.html         # Interactive Visualizations
+│   ├── settings.html       # System Configuration Editor
+│   ├── prompt.html         # Prompt Editor
+│   ├── export.html         # CSV/Excel/PNG Exporter
+│   └── 404.html            # Custom error routing page
 │
-├── server/                   # Your new backend bridge
-│   └── app.py                # The FastAPI server
+├── server/                 # Your new backend bridge
+│   └── app.py              # The FastAPI server
 │
-├── .env                  # API keys (Gemini, News, Reddit)
-├── main.py               # Entry point to run the daily job
-├── index.html            # Frontend web view for the visualization dashboard
-├── requirements.txt      # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
+├── .env                    # API keys (Gemini, News, Reddit)
+├── main.py                 # Entry point to run the daily job
+├── requirements.txt        # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
 │
-├── LICENSE               # Apache 2.0 open-source license
-└── .gitignore            # Excludes sensitive files (.env) and virtual environments (venv/)
+├── README.md               # Project Descriptor and Guide
+├── AI_DISCLOSURE.md        # Academic integrity disclosure
+├── LICENSE                 # Apache 2.0 open-source license
+└── .gitignore              # Excludes sensitive files (.env) and virtual environments (venv/)
 ```
 
 ***
