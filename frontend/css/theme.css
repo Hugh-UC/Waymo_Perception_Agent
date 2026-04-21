@@ -1,0 +1,90 @@
+/* * File: theme.css
+ * Description: Global design variables, dark/light mode controls, and colour themes.
+ */
+
+:root {
+    --bg-color: #f4f7f6;
+    --surface-color: #ffffff;
+    --surface-hover: #f0f0f0;
+    --text-primary: #1a1a1a;
+    --text-secondary: #5a5a5a;
+    --accent-color: #0066cc;
+    --accent-hover: #0052a3;
+    --border-color: #e0e0e0;
+    --error-color: #cc0000;
+    --success-bg: #e8f5e9;
+    --success-text: #2e7d32;
+    --error-bg: #ffebee;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #121212;
+        --surface-color: #1e1e1e;
+        --surface-hover: #2d2d2d;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --accent-color: #3399ff;
+        --accent-hover: #66b2ff;
+        --border-color: #333333;
+        --error-color: #ff4d4d;
+        --success-bg: #1b5e20;
+        --success-text: #a5d6a7;
+        --error-bg: #b71c1c;
+    }
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* -----------------------------------------
+   Component Colour Mapping
+   ----------------------------------------- */
+.modal-content, 
+.settings-content, 
+.settings-sidebar, 
+.top-nav { 
+    background: var(--surface-color); 
+    border-color: var(--border-color); 
+}
+
+.btn-primary { 
+    background: var(--accent-color); 
+    color: #fff; 
+}
+
+.btn-primary:hover { 
+    background: var(--accent-hover); 
+}
+
+.error-text { 
+    color: var(--error-color); 
+}
+
+input, 
+select { 
+    background: var(--bg-color); 
+    color: var(--text-primary); 
+    border-color: var(--border-color); 
+}
+
+.tag { 
+    background: var(--accent-color); 
+    color: white; 
+}
+
+.nav-links a { 
+    color: var(--text-secondary); 
+}
+
+.nav-links a.active, 
+.sidebar-btn.active { 
+    color: var(--accent-color); 
+}
+
+.sidebar-btn:hover { 
+    background: var(--surface-hover); 
+}
