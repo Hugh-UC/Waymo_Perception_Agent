@@ -18,7 +18,9 @@ A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini API to scrap
     - [3. Update Execution Policy](#3-update-execution-policy)
     - [4. Install Requirements](#4-install-requirements)
     - [Install the Package](#install-the-package)
-    - [5. Environment Variables](#5-environment-variables)
+    - [5. API Keys & Local Files](#5-api-keys--local-files)
+    - [6. Running the Server](#6-running-the-server)
+    - [7. Initial System Setup (Web UI)](#7-initial-system-setup-web-ui)
 
 ***
 
@@ -177,25 +179,55 @@ pip freeze > requirements.txt
 <br>
 
 ### 5. Environment Variables
-Because API keys are sensitive, the `.env` file is intentionally excluded from version control via `.gitignore`. You must create this file manually.
+Project requires sensitive API keys and local configurations. To maintain security, these files are auto-generated during Web UI setup and intentionally excluded from GitHub via `.gitignore`.
 
-#### Create `.env` file in root directory:
-**Windows:**
+**Excluded Files:**
+* `.env`: Stores raw API keys. Keeps credentials out of public repositories.
+* `config/auth.json`: Stores local admin hashed password.
+* `config/settings.json`: Backs up browser-specific UI preferences.
+
+**Required API Keys:**
+Before running the system, generate these free keys:
+1. **Gemini API Key:** Acquire from [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. **NewsAPI Key:** Acquire from [NewsAPI.org](https://newsapi.org/register).
+
+<br>
+
+### 6. Running the Server
+Backend uses FastAPI to serve the HTML frontend and handle API logic. 
+
+Ensure virtual environment is active, then start server.
+**Windows/Ubuntu:**
 ```sh
-type nul > .env
+python server/app.py
 ```
 
-**Ubuntu:**
-```sh
-touch .env
-```
+Server runs on local loopback. Open web browser and navigate to:  
 
-#### Add API keys to `.env`, using the following format:
-```text
-GEMINI_API_KEY="your_google_aistudio_key_here"
-NEWS_API_KEY="your_newsapi_org_key_here"
-```
+&ensp; [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
+This is the frontend interface for the entire program.  
+It allows for comprehensive system **management** and **monitoring** through a web-based dashboard.
 
+<br>
+
+### 7. Initial System Setup (Web UI)
+On first launch, Global Gatekeeper forcefully redirects to Setup Wizard. Wizard configures `.env`, `params.yaml`, and `auth.json` files automatically.
+
+**Step 1: API Integration**
+* Input Gemini and NewsAPI keys generated in Step 5.
+* System builds `.env` file. Keys are masked (`***`) on future visits to prevent screen-reading leaks.
+
+**Step 2: Agent Intelligence**
+* Select Primary model (e.g., `gemini-3-flash-preview`).
+* Define Fallback models for rate-limit protection. Custom models can be typed and added dynamically.
+* System updates `config/params.yaml`.
+
+**Step 3: Local Security**
+* Create local Admin Username and Password.
+* Password must be min 8 chars, no shell metacharacters (`&`, `|`, `;`, `$`).
+* Secures dashboard. Generates 24-hour session cookie and `config/auth.json` hash.
+
+Once complete, dashboard unlocks. Future visits require Admin login unless 24-hour cookie remains active. Settings sync cross-checks `params.yaml` against browser cache to prevent desyncs.
 
 ***
