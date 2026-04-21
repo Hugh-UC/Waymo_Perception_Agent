@@ -43,6 +43,23 @@ waymo_perception_agent/
 │   ├── __init__.py
 │   └── dash.py           # Logic for generating daily & trend graphs
 │
+├── frontend/                 # All your web assets live here
+│   ├── css/
+│   │   ├── style.css
+│   │   └── theme.css         # Dark/Light mode and alt theme styles
+│   ├── js/
+│   │   ├── api.js            # Handles talking to your Python backend
+│   │   ├── charts.js         # Logic for rendering interactive graphs
+│   │   └── settings.js       # UI validation for the YAML parameters
+│   ├── index.html            # Dashboard
+│   ├── graphs.html           # Interactive Visualizations
+│   ├── settings.html         # YAML & .env Editor
+│   ├── prompt.html           # Prompt Editor
+│   └── export.html           # CSV/Excel/PNG Exporter
+│
+├── server/                   # Your new backend bridge
+│   └── app.py                # The FastAPI server
+│
 ├── .env                  # API keys (Gemini, News, Reddit)
 ├── main.py               # Entry point to run the daily job
 ├── index.html            # Frontend web view for the visualization dashboard
