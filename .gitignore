@@ -6,3 +6,6 @@ venv/
 
 # Prevent Bytecode Tracking
 __pycache__/
+
+# Ignore Database Files
+*.db
