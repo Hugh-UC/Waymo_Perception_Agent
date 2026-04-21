@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waymo Perception Agent | Dashboard</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div id="login-overlay" class="modal-overlay hidden">
+        <div class="modal-content login-box">
+            <h2 style="color: var(--accent-color); margin-top: 0;">Waymo Agent</h2>
+            <h1>Sign in</h1>
+            <p>Use your Local Admin Account</p>
+            
+            <form id="login-form">
+                <div class="input-group">
+                    <input type="text" id="login-user" placeholder="Username" required>
+                </div>
+                
+                <div class="input-group">
+                    <input type="password" id="login-pass" placeholder="Password" required>
+                </div>
+                
+                <div id="login-error" class="error-text hidden"></div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="setup-wizard" class="modal-overlay hidden">
+        <div class="modal-content wizard-box">
+            
+            <div class="progress-container">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+
+            <div id="step-0" class="wizard-step">
+                <h2 style="color: var(--accent-color);">Welcome to Waymo Agent</h2>
+                <p>Before you can run the perception scraper, we need to securely connect your APIs and configure your local administrator account.</p>
+                <button id="btn-start-wizard" class="btn-primary" style="margin-top: 1rem;">Begin Configuration Setup</button>
+            </div>
+
+            <div id="step-1" class="wizard-step hidden">
+                <h2>Step 1: API Integration</h2>
+                <p>Enter your keys to enable the AI Agent.</p>
+                
+                <form id="form-step-1">
+                    <div class="input-group">
+                        <label style="text-align: left;">Google Gemini API Key:</label>
+                        <input type="text" id="setup-gemini" placeholder="Gemini API Key" required>
+                        <div id="clear-gemini-wrapper" class="hidden" style="text-align: left; margin-top: 0.25rem;">
+                            <span id="btn-clear-gemini" class="clear-key-text">Clear key</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label style="text-align: left;">NewsAPI.org Key:</label>
+                        <input type="text" id="setup-news" placeholder="NewsAPI Key" required>
+                        <div id="clear-news-wrapper" class="hidden" style="text-align: left; margin-top: 0.25rem;">
+                            <span id="btn-clear-news" class="clear-key-text">Clear key</span>
+                        </div>
+                    </div>
+                    
+                    <div id="setup-error" class="error-text hidden"></div>
+                    
+                    <button type="submit" class="btn-primary" style="width: 100%;">Save & Continue</button>
+                </form>
+            </div>
+
+            <div id="step-2" class="wizard-step hidden">
+                <h2>Step 2: Agent Intelligence</h2>
+                <p>Configure the LLMs powering your perception analysis.</p>
+                
+                <form id="form-step-2">
+                    <datalist id="model-options-list">
+                        <option value="gemini-3.1-pro-preview">
+                        <option value="gemini-3-flash-preview">
+                        <option value="gemini-2.5-pro">
+                        <option value="gemini-3.1-flash-lite-preview">
+                        <option value="gemini-2.5-flash">
+                    </datalist>
+
+                    <div class="input-group" style="text-align: left;">
+                        <label>Primary Model</label>
+                        <input type="text" id="setup-primary-model" list="model-options-list" placeholder="Select or type model..." required>
+                    </div>
+
+                    <div class="input-group" style="text-align: left;">
+                        <label>Fallback Models (Priority Order)</label>
+                        <div class="help-text">Add models to serve as backups during rate limits.</div>
+                        <div class="flex-input">
+                            <input type="text" id="setup-new-fallback" list="model-options-list" placeholder="Add fallback model...">
+                            <button type="button" id="btn-add-setup-fallback" class="btn-primary" style="width: auto;">Add</button>
+                        </div>
+                        <div id="setup-fallback-tags" class="tag-container"></div>
+                        <div id="setup-fallback-error" class="error-text hidden" style="margin-top: 0.5rem;"></div>
+                    </div>
+                    
+                    <div id="setup-model-error" class="error-text hidden"></div>
+                    
+                    <button type="submit" class="btn-primary" style="width: 100%;">Save Models & Continue</button>
+                </form>
+            </div>
+
+            <div id="step-3" class="wizard-step hidden">
+                <h2>Step 3: Local Security</h2>
+                <p>Create your credentials for this browser session.</p>
+                
+                <form id="form-step-3">
+                    <div class="input-group">
+                        <input type="text" id="new-user" placeholder="Admin Username" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <div class="help-text" style="text-align: left;">Minimum 8 characters.</div>
+                        <input type="password" id="new-pass" placeholder="Admin Password" minlength="8" required>
+                    </div>
+                    
+                    <div id="register-error" class="error-text hidden"></div>
+                    
+                    <button type="submit" class="btn-primary" style="background: var(--success-text); width: 100%;">Create Account & Finish</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden">
+        
+        <nav class="top-nav">
+            <div class="nav-brand">Waymo Agent v0.1</div>
+            <div class="nav-links">
+                <a href="/" class="active">Dashboard</a>
+                <a href="/graphs.html">Graphs</a>
+                <a href="/settings.html">Settings</a>
+                <a href="/export.html">Export</a>
+            </div>
+            <div class="theme-toggle">
+                <button id="btn-theme-toggle" class="btn-nav">🌗 Theme</button>
+                <button id="btn-logout" class="btn-nav hidden" style="margin-left: 10px;">Log Out</button>
+            </div>
+        </nav>
+
+        <main class="dashboard-grid">
+            <header class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>System Dashboard</h1>
+                <button class="btn-primary" style="width: auto;">Run Scraper Now</button>
+            </header>
+
+            <div class="settings-layout">
+                
+                <aside class="settings-sidebar">
+                    <button class="sidebar-btn active" data-target="panel-overview">Overview</button>
+                    <button class="sidebar-btn" data-target="panel-health">System Health</button>
+                </aside>
+
+                <div class="settings-content">
+                    <div id="panel-overview" class="settings-section">
+                        <h2>Metrics Summary</h2>
+                        <div class="dashboard-summary-grid">
+                            <div class="stat-card">
+                                <h3>Total Runs</h3>
+                                <p class="stat-value">--</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3>Sources Analysed</h3>
+                                <p class="stat-value">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="panel-health" class="settings-section hidden">
+                        <h2>System Health</h2>
+                        <p>API Connectivity: <span style="color: var(--success-text); font-weight: bold;">Healthy</span></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <script>
+        // Simple Sidebar Toggle Logic
+        document.querySelectorAll('.sidebar-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.settings-section').forEach(s => s.classList.add('hidden'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
