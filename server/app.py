@@ -4,13 +4,14 @@ Title: FastAPI Backend Server
 Description: Serves the frontend HTML/JS/CSS, handles local authentication, and provides REST API endpoints for configuration management.
 Author: Hugh Brennan
 Date: 2026-04-22
-Version: 0.1
+Version: 0.2
 """
 
 import os
 import yaml
 import json
 import hashlib
+import re
 from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -65,32 +66,72 @@ class UserAccount(BaseModel):
 # ---------------------------------------------------------
 
 @app.get("/api/status")
-async def get_system_status() -> dict[str, bool]:
+async def get_system_status() -> dict[str, Any]:
     """
-    Checks if the system requires first-time setup by verifying the existence 
-    and population of the .env and auth.json files.
+    Checks the granular status of the system to drive the frontend Setup Wizard routing.
+    Parses the .env file to dynamically generate masked API keys.
 
     Returns:
-        dict[str, bool]: A dictionary containing a 'needs_setup' flag, which 
-                         evaluates to True if either the .env keys are missing 
-                         or the local admin account has not been created.
+        dict[str, Any]: A highly detailed dictionary containing boolean flags for missing 
+                        components, masked string values, and the current YAML config.
     """
     env_exists : bool = os.path.exists(ENV_PATH)
     auth_exists : bool = os.path.exists(AUTH_PATH)
-    needs_env : bool = True
     
+    missing_env : bool = True
+    missing_auth : bool = not auth_exists
+    missing_config : bool = True
+    
+    masked_gemini : str | None = None
+    masked_news : str | None = None
+    config_data : dict[str, Any] | None = None
+    
+    # 1. Parse .env and mask keys
     if env_exists:
         with open(ENV_PATH, "r") as f:
             content : str = f.read()
-            if "GEMINI_API_KEY" in content and "NEWS_API_KEY" in content:
-                needs_env = False
+            
+            g_match = re.search(r'GEMINI_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
+            n_match = re.search(r'NEWS_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
+            
+            if g_match and n_match:
+                g_key : str = g_match.group(1).strip()
+                n_key : str = n_match.group(1).strip()
+                
+                if g_key and n_key:
+                    missing_env = False
+                    masked_gemini = "*" * 12 + g_key[-4:] if len(g_key) > 4 else "***"
+                    masked_news = "*" * 12 + n_key[-4:] if len(n_key) > 4 else "***"
 
-    return {"needs_setup": needs_env or not auth_exists}
+    # 2. Parse params.yaml
+    if os.path.exists(PARAMS_PATH):
+        try:
+            with open(PARAMS_PATH, "r") as f:
+                config_data = yaml.safe_load(f)
+                if config_data and "agent" in config_data:
+                    missing_config = False
+        except Exception:
+            pass
+
+    # 3. Determine overall setup state
+    needs_setup : bool = missing_env or missing_config or missing_auth
+
+    return {
+        "needs_setup": needs_setup,
+        "missing_env": missing_env,
+        "missing_config": missing_config,
+        "missing_auth": missing_auth,
+        "masked_gemini": masked_gemini,
+        "masked_news": masked_news,
+        "config": config_data
+    }
 
 @app.post("/api/setup")
 async def setup_env_file(keys : EnvSetup) -> dict[str, str]:
     """
     Creates or overwrites the local .env file with the provided API keys.
+    If the frontend sends an empty string (or the masked string), it skips writing 
+    that specific key to prevent overwriting valid keys with asterisks.
 
     Args:
         keys (EnvSetup): A structured payload containing the Gemini and News API keys.
@@ -102,9 +143,25 @@ async def setup_env_file(keys : EnvSetup) -> dict[str, str]:
         dict[str, str]: A status dictionary confirming successful generation.
     """
     try:
+        # Read existing keys to prevent overwriting with blanks/masks
+        existing_g_key = ""
+        existing_n_key = ""
+        if os.path.exists(ENV_PATH):
+            with open(ENV_PATH, "r") as f:
+                content = f.read()
+                g_match = re.search(r'GEMINI_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
+                n_match = re.search(r'NEWS_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
+                if g_match: existing_g_key = g_match.group(1)
+                if n_match: existing_n_key = n_match.group(1)
+
+        # Only update if the frontend provided a real, unmasked string
+        final_g_key = keys.gemini_key if (keys.gemini_key and "*" not in keys.gemini_key) else existing_g_key
+        final_n_key = keys.news_key if (keys.news_key and "*" not in keys.news_key) else existing_n_key
+
         with open(ENV_PATH, "w") as f:
-            f.write(f'GEMINI_API_KEY="{keys.gemini_key}"\n')
-            f.write(f'NEWS_API_KEY="{keys.news_key}"\n')
+            f.write(f'GEMINI_API_KEY="{final_g_key}"\n')
+            f.write(f'NEWS_API_KEY="{final_n_key}"\n')
+            
         return {"status": "success", "message": ".env generated."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to write .env: {str(e)}")
