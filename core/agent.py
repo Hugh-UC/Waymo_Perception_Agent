@@ -14,7 +14,7 @@ from typing import Any
 from dotenv import load_dotenv
 from pydantic_ai import Agent
 # Package Imports
-from core.schema import DailyScrapeBatch
+from core.schema import ScrapeBatch
 
 # load environment variables
 load_dotenv()
@@ -23,12 +23,22 @@ load_dotenv()
 with open("config/params.yaml", "r") as file:
     config : dict[str, Any] = yaml.safe_load(file)
 
-agent_model : str = config['agent']['model_name']
+# Extract agent configurations
+agent_cfg : dict[str, Any]  = config['agent']
+agent_model : str           = agent_cfg['model_name']
+fallback_model : list[str]  = agent_cfg['fallback_model']
+agent_temp : float          = agent_cfg['temperature']
+agent_retries : int         = agent_cfg['retries']
+out_retries : int           = agent_cfg['output_retries']
 
 # initialize the PydanticAI Agent
 perception_agent = Agent(
     model=agent_model,
-    result_type=DailyScrapeBatch,
+    name="waymo_perception_agent",
+    output_type=ScrapeBatch,
+    retries=agent_retries,
+    output_retries=out_retries,
+    model_settings={'temperature': agent_temp},
     system_prompt=(
         "You are an expert AI data analyst specialising in public sentiment regarding autonomous vehicles. "
         "Your objective is to read raw text scraped from media sites and extract highly structured metrics. "
@@ -50,7 +60,7 @@ if __name__ == "__main__":
         print("1. Fetching mock Reddit data...")
         mock_data : str = scrape_reddit_sentiment()
         
-        # provide agent with today's date for DailyScrapeBatch schema
+        # provide agent with today's date for ScrapeBatch schema
         today : str = date.today().isoformat()
         
         prompt : str = (
@@ -59,17 +69,48 @@ if __name__ == "__main__":
             f"{mock_data}"
         )
         
-        print(f"2. Sending data to {agent_model}... (This may take a few seconds)")
+        print(f"2. Sending data to {agent_model} (Temp: {agent_temp}). Please wait...")
         
         try:
             # execute the agent
             result = await perception_agent.run(prompt)
             
             print("\n=== STRUCTURED JSON OUTPUT ===")
-            print(result.data.model_dump_json(indent=2))
+            print(result.output.model_dump_json(indent=2))
             
         except Exception as e:
-            print(f"\nAn error occurred: {e}")
+            error_message : str = str(e)
+
+            # check if terror is due to server overload (503) or rate limits (429)
+            if "503" in error_message or "429" in error_message:
+                print(f"\n[WARNING] Primary model overloaded or rate-limited.")
+                print(f"\n[WARNING] Initiating fallback cascade...")
+
+                fallback_success : bool = False
+                for fb_model in fallback_model:
+                    print(f"\n[ATTEMPTING] Rerouting to {fb_model}...")
+
+                    try:
+                        # alt run attempt
+                        result = await perception_agent.run(prompt, model=fb_model)
+
+                        print(f"\n=== STRUCTURED JSON OUTPUT (FALLBACK | Model: {fb_model}) ===")
+                        print(result.output.model_dump_json(indent=2))
+                        
+                        # update success flag and close loop
+                        fallback_success = True
+                        break
+                    
+                    except Exception as fallback_error:
+                        print(f"\n[CRITICAL ERROR] Fallback model '{fb_model}' also failed: {fallback_error}")
+
+                # handle alternative models being unsuccessful
+                if not fallback_success:
+                    print("\n[CRITICAL ERROR] All fallback models in the cascade failed.")
+
+            else:
+                # different error (like a strict validation failure), print it normally
+                print(f"\n[ERROR] An unexpected error occurred: {e}")
 
     # run the async test
     asyncio.run(test_agent())
