@@ -12,7 +12,7 @@ scraper:
     max_posts: 10             # limits reddit posts to search (5 - 15)
 
 agent:
-  model_name: "gemini-3-flash-preview"  # Free model used, for better results use: 'gemini-3.1-pro-preview'
+  model_name: "gemini-3-flash-preview"  # Primary Model, use paid model for better results ("gemini-3.1-pro-preview")
   fallback_model:                       # Stable 'Free Tier' backup model
   - "gemini-3.1-flash-lite-preview"
   - "gemini-2.5-flash"
