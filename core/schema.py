@@ -1,3 +1,12 @@
+"""
+File: schema.py
+Title: Waymo Perception Metrics Schema
+Description: Defines the strict Pydantic data models used to enforce structured JSON output from the Gemini LLM.
+Author: Hugh Brennan
+Date: 2026-04-22
+Version: 0.1
+"""
+
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
 from datetime import date

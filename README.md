@@ -18,7 +18,7 @@ A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini 1.5 Pro API 
     - [3. Update Execution Policy](#3-update-execution-policy)
     - [4. Install Requirements](#4-install-requirements)
     - [Install the Package](#install-the-package)
-      - [Update Requirements Document with new Packages](#update-requirements-document-with-new-packages)
+    - [5. Environment Variables](#5-environment-variables)
 
 <br>
 
@@ -31,20 +31,25 @@ waymo_perception_agent/
 │   ├── __init__.py
 │   ├── schema.py         # Pydantic models (Metrics definitions)
 │   ├── agent.py          # PydanticAI agent initialization
-│   └── graph.py          # LangGraph workflow orchestration
+│   ├── graph.py          # LangGraph workflow orchestration
+│   └── utils.py          # Helper functions
 │
 ├── tools/
 │   ├── __init__.py
 │   ├── scraper.py        # Logic for Reddit/News API pulling
-│   └── database.py       # Logic for saving JSON/Metrics to your DB
+│   └── db.py             # Logic for saving JSON/Metrics to your DB
 │
 ├── visualization/
 │   ├── __init__.py
-│   └── dashboard.py      # Logic for generating your daily & trend graphs
+│   └── dash.py           # Logic for generating daily & trend graphs
 │
-├── .env                  # Your API keys (Gemini, News, Reddit)
-├── main.py               # The entry point to run the daily job
-└── requirements.txt      # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
+├── .env                  # API keys (Gemini, News, Reddit)
+├── main.py               # Entry point to run the daily job
+├── index.html            # Frontend web view for the visualization dashboard
+├── requirements.txt      # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
+│
+├── LICENSE               # Apache 2.0 open-source license
+└── .gitignore            # Excludes sensitive files (.env) and virtual environments (venv/)
 ```
 
 ***
@@ -146,6 +151,25 @@ pip freeze > requirements.txt
 
 <br>
 
+### 5. Environment Variables
+Because API keys are sensitive, the `.env` file is intentionally excluded from version control via `.gitignore`. You must create this file manually.
+
+#### Create `.env` file in root directory:
+**Windows:**
+```sh
+type nul > .env
+```
+
+**Ubuntu:**
+```sh
+touch .env
+```
+
+#### Add API keys to `.env`, using the following format:
+```text
+GEMINI_API_KEY="your_google_aistudio_key_here"
+NEWS_API_KEY="your_newsapi_org_key_here"
+```
 
 
 

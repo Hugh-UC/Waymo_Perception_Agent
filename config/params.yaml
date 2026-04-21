@@ -1,0 +1,16 @@
+# Master Configuration for Waymo Perception Agent
+scraper:
+  news:
+    query: "Waymo"
+    days_back: 5           # exclusion limit for article inclusion (1 - 7)
+    max_articles: 20       # limits articles to search (5 - 30)
+  reddit:
+    subreddit:
+    - "SelfDrivingCars"
+    - "Waymo"
+    - "AutonomousVehicles"
+    max_posts: 10          # limits reddit posts to search (5 - 15)
+
+agent:
+  model_name: "gemini-1.5-pro"
+  temperature: 0.2         # Lower temperature = more analytical and strict JSON adherence
