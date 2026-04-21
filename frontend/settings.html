@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waymo Agent | Settings</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div id="sync-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Configuration Desync Detected</h2>
+            <p>Your saved browser preferences do not match the project's actual <code>params.yaml</code> file. Please review the discrepancies below and choose which version to keep.</p>
+            
+            <div id="diff-container" class="diff-list">
+            </div>
+            
+            <div class="modal-actions">
+                <button id="btn-keep-browser" class="btn-primary" style="background: var(--accent-color);">Keep Browser Settings</button>
+                <button id="btn-keep-project" class="btn-primary" style="background: var(--error-color);">Keep Project File (Overwrite Browser)</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="app-container" class="hidden">
+        
+        <nav class="top-nav">
+            <div class="nav-brand">Waymo Agent v0.1</div>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/graphs.html">Graphs</a>
+                <a href="/settings.html" class="active">Settings</a>
+                <a href="/export.html">Export</a>
+            </div>
+            <div class="theme-toggle">
+                <button id="btn-theme-toggle" class="btn-nav">🌗 Theme</button>
+                <button id="btn-logout" class="btn-nav hidden" style="margin-left: 10px;">Log Out</button>
+            </div>
+        </nav>
+
+        <main class="dashboard-grid">
+            <h1>System Configuration</h1>
+            <p>Manage your agent parameters. Changes are synchronised across your browser and project files.</p>
+            
+            <div id="save-status" class="hidden" style="padding: 1rem; border-radius: 4px; margin-bottom: 1rem; font-weight: bold;"></div>
+
+            <div class="settings-layout">
+                
+                <aside class="settings-sidebar">
+                    <button class="sidebar-btn active" data-target="section-scraper">Scraper Parameters</button>
+                    <button class="sidebar-btn" data-target="section-agent">Agent (Gemini) Setup</button>
+                </aside>
+
+                <div class="settings-content">
+                    <form id="settings-form">
+                        
+                        <div id="section-scraper" class="settings-section">
+                            <h2>Scraper Parameters</h2>
+                            
+                            <div class="input-group">
+                                <label>News Query</label>
+                                <input type="text" id="news-query" required>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>Days Back (1 - 7)</label>
+                                <input type="number" id="news-days" min="1" max="7" required>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>Max Articles (5 - 30)</label>
+                                <input type="number" id="news-max" min="5" max="30" required>
+                            </div>
+
+                            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+
+                            <div class="input-group">
+                                <label>Reddit Communities (Max 16)</label>
+                                <div class="help-text">Must be 3-21 characters, no spaces.</div>
+                                <div class="flex-input">
+                                    <input type="text" id="new-subreddit" placeholder="Add subreddit...">
+                                    <button type="button" id="btn-add-sub" class="btn-primary" style="width: auto;">Add</button>
+                                </div>
+                                <div id="subreddit-tags" class="tag-container"></div>
+                                <div id="sub-error" class="error-text hidden" style="text-align: left; margin-top: 0.5rem;"></div>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>Max Reddit Posts (5 - 15)</label>
+                                <input type="number" id="reddit-max" min="5" max="15" required>
+                            </div>
+                        </div>
+
+                        <div id="section-agent" class="settings-section hidden">
+                            <h2>Agent (Gemini) Parameters</h2>
+                            
+                            <datalist id="model-options-list">
+                                <option value="gemini-3.1-pro-preview">
+                                <option value="gemini-3-flash-preview">
+                                <option value="gemini-2.5-pro">
+                                <option value="gemini-3.1-flash-lite-preview">
+                                <option value="gemini-2.5-flash">
+                            </datalist>
+                            
+                            <div class="input-group">
+                                <label>Primary Model</label>
+                                <input type="text" id="agent-model" list="model-options-list" placeholder="Select or type model..." required>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>Fallback Models (Priority Order)</label>
+                                <div class="help-text">Add models to serve as backups during rate limits.</div>
+                                <div class="flex-input">
+                                    <input type="text" id="new-fallback-model" list="model-options-list" placeholder="Add fallback model...">
+                                    <button type="button" id="btn-add-fallback" class="btn-primary" style="width: auto;">Add</button>
+                                </div>
+                                <div id="fallback-tags" class="tag-container"></div>
+                                <div id="fallback-error" class="error-text hidden" style="text-align: left; margin-top: 0.5rem;"></div>
+                            </div>
+
+                            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+                            
+                            <div class="input-group">
+                                <label>Temperature (0.0 - 1.0)</label>
+                                <div class="help-text">Lower values enforce stricter JSON schema adherence.</div>
+                                <input type="number" id="agent-temp" step="0.1" min="0" max="1" required>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>API Retries (1 - 5)</label>
+                                <input type="number" id="agent-retries" min="1" max="5" required>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>JSON Output Retries (1 - 10)</label>
+                                <input type="number" id="agent-out-retries" min="1" max="10" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary" style="margin-top: 2rem; width: 100%;">Save & Synchronise Configuration</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/settings.js"></script>
+
+</body>
+</html>
