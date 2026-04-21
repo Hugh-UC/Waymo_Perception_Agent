@@ -1,5 +1,29 @@
 # The Waymo Perception Agent Project (Gemini AI)
 
+A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini 1.5 Pro API to scrape media sites and generate structured temporal metrics on autonomous vehicle perception.
+
+***
+
+### Release (v0.1)
+
+***
+
+<br>
+
+## Table of Contents
+
+- [Directory Structure](#directory-structure)
+- [Getting Started](#getting-started)
+  - [Create Project Virtual Environment](#create-project-virtual-environment)
+    - [1. Build Virtual Environment](#1-build-virtual-environment)
+    - [2. Source Virtual Environment](#2-source-virtual-environment)
+    - [3. Update Execution Policy](#3-update-execution-policy)
+    - [4. Install Requirements](#4-install-requirements)
+    - [Install the Package](#install-the-package)
+      - [Update Requirements Document with new Packages](#update-requirements-document-with-new-packages)
+
+<br>
+
 ## Directory Structure:
 
 ```
@@ -25,18 +49,20 @@ waymo_perception_agent/
 └── requirements.txt      # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
 ```
 
----
+***
 
 <br>
 
-## Creating Project Virtual Environment
+# Getting Started
 
-### Build Virtual Environment:
-Windows:
+## Create Project Virtual Environment
+
+### 1. Build Virtual Environment:
+**Windows:**
 ```sh
 python -m venv venv
 ```
-Ubuntu/Python3:
+**Ubuntu/Python3:**
 ```sh
 python3 -m venv venv
 ```
@@ -47,28 +73,28 @@ sudo apt install python3-venv
 
 <br>
 
-### Source Virtual Environment:
-Windows:
+### 2. Source Virtual Environment:
+**Windows:**
 ```sh
 venv\Scripts\activate
 ```
-Ubuntu:
+**Ubuntu:**
 ```sh
 source venv/bin/activate
 ```
+**Note:** Make sure your virtual environment is activated (you will see (`venv`) in your terminal prompt) before proceeding.
 
 <br>
 
-### Install Project Libraries
-
-#### Update Execution Policy
+### 3. Update Execution Policy
 This allows the virtual environment scripts to run in PowerShell.
 
-Windows:
+**Windows:**
 ```sh
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
-Ubuntu:
+
+**Ubuntu:**
 
 _Automatically handled by sourcing active script in previous step._
 
@@ -77,26 +103,52 @@ If given '`Permission denied`' error, use:
 chmod +x <filename> 
 ```
 
-#### Install the Package
-**_Example installation of PydanticAI, LangGraph, Google GenAI & :_**
+<br>
 
-Windows:
+### 4. Install Requirements
+If the ['requirements.txt'](requirements.txt) file is **missing** or **is not populated**, please follow the steps in ['Install the Package'](#install-the-package).
+Else, all necessary packages can be installed following the instructions below.
+
+**Windows/Ubuntu:**
+```sh
+pip install -r requirements.txt
+```
+
+<br>
+
+### Install the Package
+**ONLY IF** the ['requirements.txt'](requirements.txt) is **missing** or **empty**:
+
+#### Create new `requirements.txt` file
+
+**Windows:**
+```sh
+type nul > requirements.txt
+```
+
+**Ubuntu:**
+```sh
+touch requirements.txt
+```
+
+#### Install required packages
+
+**Windows/Ubuntu:**
 ```sh
 pip install pydantic pydantic-ai langgraph google-genai python-dotenv
 ```
-
-Ubuntu:
-```sh
-pip install pydantic pydantic-ai langgraph google-genai python-dotenv
-```
-**Note:** Make sure your virtual environment is activated (you will see (`venv`) in your terminal prompt) before running the installation command.
 
 #### Update Requirements Document with new Packages
-After installing, save your exact environment setup to a file so it can be easily replicated across different machines.
+After installing, save your exact environment setup to a file so that packages can be easily reinstalled on future builds.
 
-Windows/Ubuntu:
+**Windows/Ubuntu:**
 ```sh
 pip freeze > requirements.txt
 ```
 
----
+<br>
+
+
+
+
+***
