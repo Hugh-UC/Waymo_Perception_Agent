@@ -3,3 +3,6 @@ venv/
 
 # Gemini Environment Key File
 .env
+
+# Prevent Bytecode Tracking
+__pycache__/
