@@ -23,7 +23,7 @@ load_dotenv()
 with open("config/params.yaml", "r") as file:
     config : dict[str, Any] = yaml.safe_load(file)
 
-# Extract agent configurations
+# extract agent configurations
 agent_cfg : dict[str, Any]  = config['agent']
 agent_model : str           = agent_cfg['model_name']
 fallback_model : list[str]  = agent_cfg['fallback_model']
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         except Exception as e:
             error_message : str = str(e)
 
-            # check if terror is due to server overload (503) or rate limits (429)
+            # check if error is due to server overload (503) or rate limits (429)
             if "503" in error_message or "429" in error_message:
                 print(f"\n[WARNING] Primary model overloaded or rate-limited.")
                 print(f"\n[WARNING] Initiating fallback cascade...")
@@ -102,11 +102,11 @@ if __name__ == "__main__":
                         break
                     
                     except Exception as fallback_error:
-                        print(f"\n[CRITICAL ERROR] Fallback model '{fb_model}' also failed: {fallback_error}")
+                        print(f"\n[CRITICAL ERROR] Fallback model '{fb_model}' failed: {fallback_error}")
 
                 # handle alternative models being unsuccessful
                 if not fallback_success:
-                    print("\n[CRITICAL ERROR] All fallback models in the cascade failed.")
+                    print("\n[CRITICAL ERROR] All fallback models in the cascade failed!")
 
             else:
                 # different error (like a strict validation failure), print it normally

@@ -18,7 +18,7 @@ from core.utils import get_search_time_str
 
 # load the API keys from '.env' file
 load_dotenv()
-NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+NEWS_API_KEY : str | None = os.getenv("NEWS_API_KEY")
 
 # load parameter configuration from 'yaml'
 with open("config/params.yaml", "r") as file:
