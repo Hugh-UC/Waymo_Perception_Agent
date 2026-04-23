@@ -9,31 +9,9 @@
 </head>
 <body>
 
-    <div id="login-overlay" class="modal-overlay hidden">
-        <div class="modal-content login-box">
-            <h2 style="color: var(--accent-color); margin-top: 0;">Waymo Agent</h2>
-            <h1>Sign in</h1>
-            <p>Use your Local Admin Account</p>
-            
-            <form id="login-form">
-                <div class="input-group">
-                    <input type="text" id="login-user" placeholder="Username" required>
-                </div>
-                
-                <div class="input-group">
-                    <input type="password" id="login-pass" placeholder="Password" required>
-                </div>
-                
-                <div id="login-error" class="error-text hidden"></div>
-                
-                <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="setup-wizard" class="modal-overlay hidden">
-        <div id="setup-placeholder"></div>
-    </div>
+    <div id="auth-placeholder"></div>
+    
+    <div id="setup-placeholder"></div>
 
     <div id="app-container" class="hidden">
         

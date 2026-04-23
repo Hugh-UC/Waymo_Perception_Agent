@@ -1,0 +1,56 @@
+<!--
+Component: Authentication & Recovery Modals
+Description: A unified interface containing both the local administrator sign-in form and the catastrophic factory reset recovery modal.
+Dependencies: style.css, theme.css, auth.js, api.js
+Author: Hugh Brennan
+Date: 2026-04-23
+Usage: Injected dynamically by FastAPI into the div id="auth-modals-placeholder" container within index.html.
+-->
+<div id="login-overlay" class="modal-overlay hidden">
+    <div class="modal-content login-box">
+        <h2 style="color: var(--accent-color); margin-top: 0;">Waymo Agent</h2>
+        <h1>Sign in</h1>
+        <p>Use your Local Admin Account</p>
+        
+        <form id="login-form">
+            <div class="input-group">
+                <input type="text" id="login-user" placeholder="Username" required>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" id="login-pass" placeholder="Password" required>
+            </div>
+            
+            <div id="login-error" class="error-text hidden"></div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="#" id="link-forgot-password" style="color: var(--text-secondary); font-size: 0.85rem; text-decoration: none;">Forgot Password?</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="reset-overlay" class="modal-overlay hidden">
+    <div class="modal-content login-box" style="border: 1px solid var(--error-color);">
+        <h2 style="color: var(--error-color); margin-top: 0;">System Recovery</h2>
+        <p style="margin-bottom: 1.5rem;">If you have lost your local admin password, you must perform a factory reset.</p>
+
+        <div class="input-group">
+            <label style="text-align: left; font-size: 0.85rem; color: var(--text-secondary);">Email Recovery (Coming Soon)</label>
+            <input type="email" placeholder="Email routing not yet configured" disabled style="background: var(--surface-hover); cursor: not-allowed; opacity: 0.7;">
+        </div>
+
+        <div style="background: var(--error-bg); color: var(--error-color); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-size: 0.85rem; text-align: left; border: 1px solid rgba(255,0,0,0.2);">
+            <strong>CRITICAL WARNING:</strong> Proceeding will permanently wipe all configurations, delete your saved API keys, and destroy the SQLite database.
+        </div>
+
+        <div id="reset-error" class="error-text hidden"></div>
+
+        <div style="display: flex; gap: 1rem;">
+            <button id="btn-cancel-reset" class="btn-primary" style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); flex: 1;">Cancel</button>
+            <button id="btn-confirm-reset" class="btn-primary" style="background: var(--error-color); flex: 1;">Wipe & Reset</button>
+        </div>
+    </div>
+</div>
