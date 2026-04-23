@@ -13,18 +13,15 @@ const AuthManager = {
     // Session & Cookie Management
     // ---------------------------------------------------------
     setSession(username) {
-        const d = new Date();
-        d.setTime(d.getTime() + (24 * 60 * 60 * 1000));
-        document.cookie = `waymo_session=${username};expires=${d.toUTCString()};path=/`;
+        sessionStorage.setItem("wpa_session", username);
     },
     
     getSession() {
-        const match = document.cookie.match(new RegExp('(^| )waymo_session=([^;]+)'));
-        return match ? match[2] : null;
+        return sessionStorage.getItem("wpa_session");
     },
     
     clearSession() { 
-        document.cookie = "waymo_session=; Max-Age=-99999999; path=/;"; 
+        sessionStorage.removeItem("wpa_session");
     },
     
     isPasswordSafe(pwd) {
@@ -43,19 +40,21 @@ const AuthManager = {
      * @param {number} stepNumber - The target step (0, 1, 2, or 3).
      */
     goToStep(stepNumber) {
-        document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('hidden'));
+        // get all steps and hide them
+        const allSteps = document.querySelectorAll('.wizard-step');
+        allSteps.forEach(el => el.classList.add('hidden'));
         
+        // unhide target step
         const targetStep = document.getElementById(`step-${stepNumber}`);
         if (targetStep) targetStep.classList.remove('hidden');
         
-        // Update Progress Bar (4 steps total: 0 = 0%, 1 = 33%, 2 = 66%, 3 = 100%)
+        // update progress bar
         const progressFill = document.getElementById('progress-fill');
-        if (progressFill) {
-            const percentage = (stepNumber / 3) * 100; 
+        if (progressFill && allSteps.length > 1) {
+            const totalSteps = allSteps.length - 1;
+            const percentage = (stepNumber / totalSteps) * 100; 
             progressFill.style.width = `${percentage}%`;
         }
-        
-        localStorage.setItem("waymo_wizard_step", stepNumber.toString());
     },
 
     /**
@@ -130,18 +129,11 @@ const AuthManager = {
         }
 
         // 3. smart routing
+        //    calculate backend truth vs local browser state
         let targetStep = 1;
-        const savedStep = parseInt(localStorage.getItem("waymo_wizard_step"));
-        
-        if (savedStep) {
-            targetStep = savedStep;
-        } else if (status.missing_env) {
-            targetStep = 1;     // needs API Keys
-        } else if (status.missing_config) {
-            targetStep = 2;     // needs Model Configs
-        } else if (status.missing_auth) {
-            targetStep = 3;     // needs Admin Account
-        }
+        if (status.missing_env)         targetStep = 1;     // needs API Keys
+        else if (status.missing_config) targetStep = 2;     // needs Model Configs
+        else if (status.missing_auth)   targetStep = 3;     // needs Admin Account
 
         this.nextIncompleteStep = targetStep;
 
@@ -177,19 +169,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Step 0: Intro
     document.getElementById("btn-start-wizard")?.addEventListener("click", () => {
-        if (AuthManager.nextIncompleteStep <= 1) {AuthManager.goToStep(1);}
+        AuthManager.goToStep(1);
     });
 
     document.getElementById("btn-continue-wizard")?.addEventListener("click", () => {
-        if (AuthManager.nextIncompleteStep > 1) {AuthManager.goToStep(AuthManager.nextIncompleteStep);}
+        // resume highest known progress
+        AuthManager.goToStep(AuthManager.nextIncompleteStep);
     });
 
     document.getElementById("btn-restart-wizard")?.addEventListener("click", () => {
-        if (AuthManager.nextIncompleteStep > 1) {
-            localStorage.removeItem("waymo_wizard_step"); // clear saved progress
-            AuthManager.nextIncompleteStep = 1;           // reset internal state 
-            AuthManager.goToStep(1);
-        }
+        AuthManager.nextIncompleteStep = 1;           // reset internal state 
+        AuthManager.goToStep(1);
     });
 
 
@@ -283,7 +273,6 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             await window.API.registerUser({ username: user, password: pass });
             
-            localStorage.removeItem("waymo_wizard_step"); 
             AuthManager.setSession(user);
             
             wizardModal.classList.add("hidden");
