@@ -339,7 +339,7 @@ async def serve_index() -> HTMLResponse:
     # 4. send assembled page to browser
     return HTMLResponse(content=html_content)
 
-@app.get("/{page_name}.html")
+@app.get("/{page_name}.html", response_model=None)
 async def serve_pages(page_name : str) -> FileResponse | RedirectResponse:
     """
     Dynamically routes and serves specific HTML pages from the frontend directory.
