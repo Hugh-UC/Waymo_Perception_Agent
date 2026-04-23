@@ -9,3 +9,6 @@ __pycache__/
 
 # Ignore Database Files
 *.db
+
+# VS Code Workspace
+.vscode/
