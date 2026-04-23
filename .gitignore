@@ -1,14 +1,17 @@
 # Virtual Environment Directory
 venv/
 
-# Gemini Environment Key File
-.env
+# VS Code Workspace
+.vscode/
 
 # Prevent Bytecode Tracking
 __pycache__/
 
-# Ignore Database Files
+# Gemini Environment Key File
+.env
+
+# All Database Files
 *.db
 
-# VS Code Workspace
-.vscode/
+# Authentication Credentials
+config/auth.json
