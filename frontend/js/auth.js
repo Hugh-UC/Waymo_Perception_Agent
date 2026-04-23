@@ -320,6 +320,39 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
+    // forgot password flow
+    document.getElementById("link-forgot-password")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("login-overlay").classList.add("hidden");
+        document.getElementById("reset-overlay").classList.remove("hidden");
+    });
+
+    document.getElementById("btn-cancel-reset")?.addEventListener("click", () => {
+        document.getElementById("reset-overlay").classList.add("hidden");
+        document.getElementById("login-overlay").classList.remove("hidden");
+    });
+
+    document.getElementById("btn-confirm-reset")?.addEventListener("click", async () => {
+        const errBox = document.getElementById("reset-error");
+        const btn = document.getElementById("btn-confirm-reset");
+        
+        errBox.classList.add("hidden");
+        btn.textContent = "Wiping System...";
+        btn.disabled = true;
+
+        try {
+            await window.API.factoryReset();
+            AuthManager.clearSession(); // Purge old browser token
+            window.location.reload();   // Reload to trigger Setup Wizard
+        } catch (error) {
+            errBox.textContent = error.detail ? error.detail : "Failed to reset system.";
+            errBox.classList.remove("hidden");
+            btn.textContent = "Wipe & Reset";
+            btn.disabled = false;
+        }
+    });
+
+
     // boot
     if (window.BootManager) window.BootManager.initialize();
 });

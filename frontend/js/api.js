@@ -75,6 +75,15 @@ const API = {
         return res.json();
     },
 
+    /**
+     * Triggers a catastrophic system wipe (deletes auth, keys, and DB).
+     */
+    async factoryReset() {
+        const res = await fetch("/api/reset", { method: "POST" });
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
+
     // ---------------------------------------------------------
     // Configuration Endpoints (For settings.js & setup models)
     // ---------------------------------------------------------
