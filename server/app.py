@@ -218,6 +218,49 @@ async def login_api(user : UserAccount) -> dict[str, bool]:
     
     return {"authenticated": is_valid}
 
+@app.post("/api/reset")
+async def factory_reset_system() -> dict[str, str]:
+    """
+    Performs a catastrophic factory reset. Deletes API keys, auth credentials, 
+    and the SQLite database. Overwrites params.yaml with baseline defaults.
+
+    Raises:
+        HTTPException: _description_
+
+    Returns:
+        dict[str, str]: _description_
+    """
+    try:
+        # 1. delete auth & environment
+        if os.path.exists(AUTH_PATH): os.remove(AUTH_PATH)
+        if os.path.exists(ENV_PATH): os.remove(ENV_PATH)
+        
+        # 2. delete database
+        db_path : str = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
+        if os.path.exists(db_path): os.remove(db_path)
+        
+        # 3. restore params.yaml to safe defaults
+        default_config = {
+            "scraper": {
+                "news": {"query": "Waymo", "days_back": 3, "max_articles": 15},
+                "reddit": {"subreddit": ["SelfDrivingCars", "Waymo", "AutonomousVehicles"], "max_posts": 8}
+            }, 
+            "agent": {
+                "model_name": "gemini-2.5-flash",
+                "fallback_model": ["gemini-3-flash-preview"],
+                "temperature": 0.2,
+                "retries": 3,
+                "output_retries": 5
+            }
+        }
+        with open(PARAMS_PATH, "w") as f:
+            yaml.dump(default_config, f, default_flow_style=False, sort_keys=False)
+
+        return {"status": "success", "message": "System factory reset complete."}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")
+
 
 # ---------------------------------------------------------
 # Configuration Endpoints
@@ -310,11 +353,11 @@ async def save_user_preferences(prefs : UserPreferences) -> dict[str, str]:
 async def serve_index() -> HTMLResponse:
     """
     Serves the root dashboard page.
-    Dynamically reads and injects the setup wizard HTML using native string 
-    replacement only if the system requires setup (zero-dependency).
+    Dynamically reads and injects the setup wizard and reset modal HTML using 
+    native string replacement (zero-dependency).
 
     Returns:
-        HTMLResponse: dynamically assembled index HTML content (index.html).
+        HTMLResponse: dynamically assembled index HTML content.
     """
     # 1. check system status internally
     status_data = await get_system_status()
@@ -335,6 +378,13 @@ async def serve_index() -> HTMLResponse:
     else:
         # delete the placeholder to keep DOM clean
         html_content = html_content.replace('<div id="setup-placeholder"></div>', "")
+
+    # 4. unconditionally inject the login modal
+    auth_modals_path : str = os.path.join(FRONTEND_DIR, "components", "auth-modals.html")
+    if os.path.exists(auth_modals_path):
+        with open(auth_modals_path, "r", encoding="utf-8") as f:
+            reset_content : str = f.read()
+        html_content = html_content.replace('<div id="auth-placeholder"></div>', reset_content)
 
     # 4. send assembled page to browser
     return HTMLResponse(content=html_content)
