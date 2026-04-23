@@ -12,6 +12,7 @@ import yaml
 import json
 import hashlib
 import re
+import sqlite3
 from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -343,10 +344,40 @@ async def custom_404_handler(request: Any, __: Any) -> FileResponse:
     """
     return FileResponse(os.path.join(FRONTEND_DIR, "404.html"), status_code=404)
 
-# Mount the frontend directory to serve CSS and JS assets
+
+@app.get("/api/dashboard/summary")
+async def get_dashboard_summary() -> dict[str, int]:
+    """
+    Queries the SQLite database to fetch the all-time totals for the dashboard.
+    """
+    db_path : str = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
+    
+    # return zeros, if daatabase doesnt exists
+    if not os.path.exists(db_path):
+        return {"total_runs": 0, "total_sources": 0}
+        
+    try:
+        # create connection to database
+        conn : sqlite3.Connection   = sqlite3.connect(db_path)
+        cursor : sqlite3.Cursor     = conn.cursor()
+        
+        # sum counts from daily overview table
+        cursor.execute("SELECT SUM(run_count), SUM(source_total) FROM daily_overview")
+        row = cursor.fetchone()
+        conn.close()
+        
+        return {
+            "total_runs": row[0] if row[0] else 0,
+            "total_sources": row[1] if row[1] else 0
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database read error: {str(e)}")
+
+# mount frontend directory to serve CSS and JS assets
 app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="frontend")
+
 
 if __name__ == "__main__":
     import uvicorn
-    # Run the server on the local loopback address
+    # run server (local loopback address)
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

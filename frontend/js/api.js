@@ -24,6 +24,16 @@ const API = {
     },
 
     /**
+     * Fetches high-level database metrics for the main dashboard.
+     * Expected Response: { total_runs, total_sources }
+     */
+    async getDashboardSummary() {
+        const res = await fetch("/api/dashboard/summary");
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
+
+    /**
      * Submits the Gemini and News API keys to generate the .env file.
      * @param {Object} payload - Object containing gemini_key and/or news_key.
      */
@@ -115,23 +125,23 @@ const BootManager = {
             const status = await API.getStatus();
 
             if (status.needs_setup) {
-                // RULE 1: If any setup is missing, force the user to index.html
+                // RULE 1: if any setup is missing, force the user to index.html
                 if (!isIndex) { 
                     window.location.href = '/'; 
                     return; 
                 }
                 
-                // Unlock the wizard overlay and prepopulate forms
+                // unlock the wizard overlay and prepopulate forms
                 document.getElementById("setup-wizard").classList.remove("hidden");
                 if (window.AuthManager) {
                     window.AuthManager.initializeWizardState(status);
                 }
                 
             } else {
-                // RULE 2: Setup is 100% complete. Check for active session cookie.
+                // RULE 2: setup is 100% complete, check for active session cookie
                 if (!window.AuthManager || !window.AuthManager.getSession()) {
                     
-                    // If no session exists, force user to index.html for login
+                    // no session exists, force user to index.html
                     if (!isIndex) { 
                         window.location.href = '/'; 
                         return; 
@@ -139,7 +149,7 @@ const BootManager = {
                     
                     document.getElementById("login-overlay").classList.remove("hidden");
                 } else {
-                    // RULE 3: Valid Session Confirmed. Unlock the application container.
+                    // RULE 3: valid session confirmed, unlock application container
                     const app = document.getElementById("app-container");
                     if (app) {
                         app.classList.remove("hidden");
@@ -149,6 +159,20 @@ const BootManager = {
                     if (logoutBtn) {
                         logoutBtn.classList.remove("hidden");
                     }
+
+                    // populate dashboard metrics
+                    if (isIndex) {
+                        try {
+                            const metrics = await API.getDashboardSummary();
+                            const statValues = document.querySelectorAll(".stat-value");
+                            if (statValues.length >= 2) {
+                                statValues[0].textContent = metrics.total_runs;
+                                statValues[1].textContent = metrics.total_sources;
+                            }
+                        } catch (error) {
+                            console.error("Failed to load dashboard metrics:", error);
+                        }
+                    }
                 }
             }
         } catch (error) {
@@ -157,6 +181,6 @@ const BootManager = {
     }
 };
 
-// Expose SDK tools to the global window object
+// expose SDK tools to the global window object
 window.API = API;
 window.BootManager = BootManager;
