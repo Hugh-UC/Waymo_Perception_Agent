@@ -12,7 +12,6 @@ const AuthManager = {
     // ---------------------------------------------------------
     // Session & Cookie Management
     // ---------------------------------------------------------
-    
     setSession(username) {
         const d = new Date();
         d.setTime(d.getTime() + (24 * 60 * 60 * 1000));
@@ -33,10 +32,10 @@ const AuthManager = {
         return !(/[&|;$><`\\!]/.test(pwd));
     },
 
+
     // ---------------------------------------------------------
     // Setup Wizard Smart State Management
     // ---------------------------------------------------------
-    
     wizardFallbackModels: [],
     
     /**
@@ -113,7 +112,7 @@ const AuthManager = {
      * to the exact step they need to complete.
      */
     initializeWizardState(status) {
-        // 1. Prefill ENV parameters if the backend provides masked versions
+        // 1. prefill ENV parameters if backend provides masked versions
         if (status.masked_gemini) {
             this.setupMaskedInput("setup-gemini", "clear-gemini-wrapper", "btn-clear-gemini", status.masked_gemini);
         }
@@ -121,7 +120,7 @@ const AuthManager = {
             this.setupMaskedInput("setup-news", "clear-news-wrapper", "btn-clear-news", status.masked_news);
         }
 
-        // 2. Prefill YAML configurations
+        // 2. prefill YAML configurations
         if (status.config && status.config.agent) {
             const primaryInput = document.getElementById("setup-primary-model");
             if (primaryInput) primaryInput.value = status.config.agent.model_name || "";
@@ -130,34 +129,71 @@ const AuthManager = {
             this.renderWizardFallbackTags();
         }
 
-        // 3. Smart Routing: Send user to the first missing requirement, or their saved position.
+        // 3. smart routing
+        let targetStep = 1;
         const savedStep = parseInt(localStorage.getItem("waymo_wizard_step"));
-
+        
         if (savedStep) {
-            this.goToStep(savedStep);
+            targetStep = savedStep;
         } else if (status.missing_env) {
-            this.goToStep(1); // Needs API Keys
+            targetStep = 1;     // needs API Keys
         } else if (status.missing_config) {
-            this.goToStep(2); // Needs Model Configs
+            targetStep = 2;     // needs Model Configs
         } else if (status.missing_auth) {
-            this.goToStep(3); // Needs Admin Account
-        } else {
-            this.goToStep(0); // Brand new system
+            targetStep = 3;     // needs Admin Account
         }
+
+        this.nextIncompleteStep = targetStep;
+
+        // 4. update 'Step 0' UI buttons
+        const btnStart = document.getElementById("btn-start-wizard");
+        const btnContinue = document.getElementById("btn-continue-wizard");
+        const btnRestart = document.getElementById("btn-restart-wizard");
+
+        // toggle buttons based on step progress
+        if (targetStep > 1) {
+            if (btnStart) btnStart.classList.add("hidden");
+            if (btnContinue) btnContinue.classList.remove("hidden");
+            if (btnRestart) btnRestart.classList.remove("hidden");
+        } else {
+            if (btnStart) btnStart.classList.remove("hidden");
+            if (btnContinue) btnContinue.classList.add("hidden");
+            if (btnRestart) btnRestart.classList.add("hidden");
+        }
+
+        // 5. go to welcome screen
+        this.goToStep(0);
     }
 };
 
 window.AuthManager = AuthManager;
 
+// progress controller
 document.addEventListener("DOMContentLoaded", () => {
+    // get modal elements
     const wizardModal = document.getElementById("setup-wizard");
     const loginModal = document.getElementById("login-overlay");
     const appContainer = document.getElementById("app-container");
 
     // Step 0: Intro
-    document.getElementById("btn-start-wizard")?.addEventListener("click", () => AuthManager.goToStep(1));
+    document.getElementById("btn-start-wizard")?.addEventListener("click", () => {
+        if (AuthManager.nextIncompleteStep <= 1) {AuthManager.goToStep(1);}
+    });
 
-    // Step 1: Save APIs
+    document.getElementById("btn-continue-wizard")?.addEventListener("click", () => {
+        if (AuthManager.nextIncompleteStep > 1) {AuthManager.goToStep(AuthManager.nextIncompleteStep);}
+    });
+
+    document.getElementById("btn-restart-wizard")?.addEventListener("click", () => {
+        if (AuthManager.nextIncompleteStep > 1) {
+            localStorage.removeItem("waymo_wizard_step"); // clear saved progress
+            AuthManager.nextIncompleteStep = 1;           // reset internal state 
+            AuthManager.goToStep(1);
+        }
+    });
+
+
+    // Step 1: save APIs
     document.getElementById("form-step-1")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const errBox = document.getElementById("setup-error");
@@ -167,7 +203,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const newsInput = document.getElementById("setup-news");
         const payload = {};
 
-        // Only include keys in the payload if they have been actively altered or are brand new
+        // include keys in payload,
+        // if they have been actively altered or are brand new
         if (geminiInput.dataset.isMasked !== "true") {
             payload.gemini_key = geminiInput.value.trim();
         }
@@ -176,10 +213,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Only fire the API request if we actually have new unmasked data to save
+            // fire the API request, if there is new unmasked data
             if (Object.keys(payload).length > 0) {
                 await window.API.setupKeys(payload);
             }
+            // move to next step
             AuthManager.goToStep(2);
         } catch (error) {
             errBox.textContent = error.detail ? `Server Error: ${error.detail}` : "Failed to save API keys.";
@@ -187,7 +225,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Step 2: Agent Intelligence Models
+
+    // Step 2: agent intelligence models
     document.getElementById("btn-add-setup-fallback")?.addEventListener("click", () => {
         const input = document.getElementById("setup-new-fallback");
         const errBox = document.getElementById("setup-fallback-error");
@@ -225,7 +264,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Step 3: Register Local Admin
+
+    // Step 3: register local admin
     document.getElementById("form-step-3")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const errBox = document.getElementById("register-error");
@@ -256,7 +296,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Login Overlay
+
+    // login overlay
     document.getElementById("login-form")?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const errBox = document.getElementById("login-error");
@@ -282,12 +323,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Logout
+
+    // logout
     document.getElementById("btn-logout")?.addEventListener("click", () => {
         AuthManager.clearSession();
         window.location.reload(); 
     });
 
-    // Boot
+
+    // boot
     if (window.BootManager) window.BootManager.initialize();
 });
