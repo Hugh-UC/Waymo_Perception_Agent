@@ -6,7 +6,6 @@ Author: Hugh Brennan
 Date: 2026-04-22
 Version: 0.2
 """
-
 import os
 import yaml
 import json
@@ -16,24 +15,24 @@ import sqlite3
 from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 
-# Initialize the server with strict typing
+# initialize server with strict typing
 app : FastAPI = FastAPI(title="Waymo Perception Agent API")
 
-# Define absolute paths to prevent directory traversal issues
-BASE_DIR : str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FRONTEND_DIR : str = os.path.join(BASE_DIR, "frontend")
-PARAMS_PATH : str = os.path.join(BASE_DIR, "config", "params.yaml")
-ENV_PATH : str = os.path.join(BASE_DIR, ".env")
-PREFS_JSON_PATH : str = os.path.join(BASE_DIR, "config", "settings.json")
-AUTH_PATH : str = os.path.join(BASE_DIR, "config", "auth.json")
+# define absolute paths, prevent directory traversal issues
+BASE_DIR : str          = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR : str      = os.path.join(BASE_DIR, "frontend")
+PARAMS_PATH : str       = os.path.join(BASE_DIR, "config", "params.yaml")
+ENV_PATH : str          = os.path.join(BASE_DIR, ".env")
+PREFS_JSON_PATH : str   = os.path.join(BASE_DIR, "config", "settings.json")
+AUTH_PATH : str         = os.path.join(BASE_DIR, "config", "auth.json")
+
 
 # ---------------------------------------------------------
 # Pydantic Schemas for API Payloads
 # ---------------------------------------------------------
-
 class EnvSetup(BaseModel):
     """
     Pydantic schema for validating the incoming .env file setup request.
@@ -62,10 +61,10 @@ class UserAccount(BaseModel):
     username : str
     password : str
 
+
 # ---------------------------------------------------------
 # Authentication & Setup Endpoints
 # ---------------------------------------------------------
-
 @app.get("/api/status")
 async def get_system_status() -> dict[str, Any]:
     """
@@ -73,25 +72,28 @@ async def get_system_status() -> dict[str, Any]:
     Parses the .env file to dynamically generate masked API keys.
 
     Returns:
-        dict[str, Any]: A highly detailed dictionary containing boolean flags for missing 
+        dict[str, Any]: highly detailed dictionary containing boolean flags for missing 
                         components, masked string values, and the current YAML config.
     """
-    env_exists : bool = os.path.exists(ENV_PATH)
+    env_exists : bool  = os.path.exists(ENV_PATH)
     auth_exists : bool = os.path.exists(AUTH_PATH)
     
-    missing_env : bool = True
-    missing_auth : bool = not auth_exists
+    # component flags
+    missing_env : bool    = True
+    missing_auth : bool   = not auth_exists
     missing_config : bool = True
     
+    # extracted data
     masked_gemini : str | None = None
     masked_news : str | None = None
     config_data : dict[str, Any] | None = None
     
-    # 1. Parse .env and mask keys
+    # 1. parse .env and mask keys
     if env_exists:
         with open(ENV_PATH, "r") as f:
             content : str = f.read()
             
+            # regex search for keys
             g_match = re.search(r'GEMINI_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
             n_match = re.search(r'NEWS_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
             
@@ -104,7 +106,7 @@ async def get_system_status() -> dict[str, Any]:
                     masked_gemini = "*" * 12 + g_key[-4:] if len(g_key) > 4 else "***"
                     masked_news = "*" * 12 + n_key[-4:] if len(n_key) > 4 else "***"
 
-    # 2. Parse params.yaml
+    # 2. parse params.yaml
     if os.path.exists(PARAMS_PATH):
         try:
             with open(PARAMS_PATH, "r") as f:
@@ -114,7 +116,7 @@ async def get_system_status() -> dict[str, Any]:
         except Exception:
             pass
 
-    # 3. Determine overall setup state
+    # 3. determine overall setup state
     needs_setup : bool = missing_env or missing_config or missing_auth
 
     return {
@@ -135,16 +137,16 @@ async def setup_env_file(keys : EnvSetup) -> dict[str, str]:
     that specific key to prevent overwriting valid keys with asterisks.
 
     Args:
-        keys (EnvSetup): A structured payload containing the Gemini and News API keys.
+        keys (EnvSetup): structured payload containing the Gemini and News API keys.
 
     Raises:
-        HTTPException: If the server encounters a file system error while writing the .env file.
+        HTTPException: if the server encounters a file system error while writing the .env file.
 
     Returns:
-        dict[str, str]: A status dictionary confirming successful generation.
+        dict[str, str]: status dictionary confirming successful generation.
     """
     try:
-        # Read existing keys to prevent overwriting with blanks/masks
+        # read existing keys, prevent overwriting with blanks/masks
         existing_g_key = ""
         existing_n_key = ""
         if os.path.exists(ENV_PATH):
@@ -155,15 +157,16 @@ async def setup_env_file(keys : EnvSetup) -> dict[str, str]:
                 if g_match: existing_g_key = g_match.group(1)
                 if n_match: existing_n_key = n_match.group(1)
 
-        # Only update if the frontend provided a real, unmasked string
+        # update if frontend provided a real, unmasked string
         final_g_key = keys.gemini_key if (keys.gemini_key and "*" not in keys.gemini_key) else existing_g_key
         final_n_key = keys.news_key if (keys.news_key and "*" not in keys.news_key) else existing_n_key
 
+        # write keys into .env
         with open(ENV_PATH, "w") as f:
             f.write(f'GEMINI_API_KEY="{final_g_key}"\n')
             f.write(f'NEWS_API_KEY="{final_n_key}"\n')
-            
         return {"status": "success", "message": ".env generated."}
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to write .env: {str(e)}")
 
@@ -173,13 +176,13 @@ async def register_user(user : UserAccount) -> dict[str, str]:
     Hashes the provided password and saves the local admin account credentials to auth.json.
 
     Args:
-        user (UserAccount): The plaintext username and password submitted during the setup wizard.
+        user (UserAccount): plaintext username and password submitted during the setup wizard.
 
     Raises:
-        HTTPException: If the server fails to create the config directory or write to auth.json.
+        HTTPException: if the server fails to create the config directory or write to auth.json.
 
     Returns:
-        dict[str, str]: A status dictionary confirming successful registration.
+        dict[str, str]: status dictionary confirming successful registration.
     """
     hashed_pw : str = hashlib.sha256(user.password.encode()).hexdigest()
     try:
@@ -196,13 +199,13 @@ async def login_api(user : UserAccount) -> dict[str, bool]:
     Verifies incoming login credentials against the stored SHA-256 hash in auth.json.
 
     Args:
-        user (UserAccount): The login attempt containing a username and plaintext password.
+        user (UserAccount): login attempt containing a username and plaintext password.
 
     Raises:
-        HTTPException: If the auth.json file does not exist (status 404).
+        HTTPException: if the auth.json file does not exist (status 404).
 
     Returns:
-        dict[str, bool]: A dictionary containing an 'authenticated' boolean flag indicating success or failure.
+        dict[str, bool]: dictionary containing an 'authenticated' boolean flag indicating success or failure.
     """
     if not os.path.exists(AUTH_PATH):
         raise HTTPException(status_code=404, detail="No account configured.")
@@ -215,20 +218,20 @@ async def login_api(user : UserAccount) -> dict[str, bool]:
     
     return {"authenticated": is_valid}
 
+
 # ---------------------------------------------------------
 # Configuration Endpoints
 # ---------------------------------------------------------
-
 @app.get("/api/config")
 async def get_yaml_config() -> dict[str, Any]:
     """
     Reads the params.yaml file and sends it to the frontend settings page.
 
     Raises:
-        HTTPException: If the server fails to read or parse the YAML file.
+        HTTPException: if the server fails to read or parse the YAML file.
 
     Returns:
-        dict[str, Any]: A dictionary representation of the core YAML configuration.
+        dict[str, Any]: dictionary representation of the core YAML configuration.
     """
     try:
         with open(PARAMS_PATH, "r") as f:
@@ -242,13 +245,13 @@ async def update_yaml_config(new_config : YamlUpdate) -> dict[str, str]:
     Overwrites the params.yaml file with the sanitized data sent from the frontend UI.
 
     Args:
-        new_config (YamlUpdate): The structured payload containing the updated config parameters.
+        new_config (YamlUpdate): structured payload containing the updated config parameters.
 
     Raises:
-        HTTPException: If the server fails to write the YAML data to the file system.
+        HTTPException: if the server fails to write the YAML data to the file system.
 
     Returns:
-        dict[str, str]: A status dictionary confirming successful update.
+        dict[str, str]: status dictionary confirming successful update.
     """
     try:
         with open(PARAMS_PATH, "w") as f:
@@ -263,10 +266,10 @@ async def get_user_preferences() -> dict[str, Any]:
     Retrieves the backup settings.json file used for browser-to-file reconciliation.
 
     Raises:
-        HTTPException: If the server fails to read or parse the JSON file.
+        HTTPException: if the server fails to read or parse the JSON file.
 
     Returns:
-        dict[str, Any]: A dictionary representation of user preferences, or a default 
+        dict[str, Any]: dictionary representation of user preferences, or a default 
                         empty configuration dictionary if the backup file does not exist.
     """
     if not os.path.exists(PREFS_JSON_PATH):
@@ -283,13 +286,13 @@ async def save_user_preferences(prefs : UserPreferences) -> dict[str, str]:
     Saves the user preferences to a persistent settings.json file with a unix timestamp.
 
     Args:
-        prefs (UserPreferences): A structured payload containing the timestamp and config dictionary.
+        prefs (UserPreferences): structured payload containing the timestamp and config dictionary.
 
     Raises:
-        HTTPException: If the server fails to write the JSON data to the file system.
+        HTTPException: if the server fails to write the JSON data to the file system.
 
     Returns:
-        dict[str, str]: A status dictionary confirming successful backup.
+        dict[str, str]: status dictionary confirming successful backup.
     """
     try:
         os.makedirs(os.path.dirname(PREFS_JSON_PATH), exist_ok=True)
@@ -299,56 +302,105 @@ async def save_user_preferences(prefs : UserPreferences) -> dict[str, str]:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save preferences: {str(e)}")
 
+
 # ---------------------------------------------------------
 # Static File Mounting & Routing
 # ---------------------------------------------------------
-
 @app.get("/")
-async def serve_index() -> FileResponse:
+async def serve_index() -> HTMLResponse:
     """
     Serves the root dashboard page.
+    Dynamically reads and injects the setup wizard HTML using native string 
+    replacement only if the system requires setup (zero-dependency).
 
     Returns:
-        FileResponse: The index.html file located in the frontend directory.
+        HTMLResponse: dynamically assembled index HTML content (index.html).
     """
-    return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+    # 1. check system status internally
+    status_data = await get_system_status()
+    
+    # 2. read base index.html file
+    index_path : str = os.path.join(FRONTEND_DIR, "index.html")
+    with open(index_path, "r", encoding="utf-8") as f:
+        html_content : str = f.read()
+
+    # 3. inject or remove the setup HTML based on status
+    if status_data["needs_setup"]:
+        setup_path : str = os.path.join(FRONTEND_DIR, "components", "setup.html")
+        with open(setup_path, "r", encoding="utf-8") as f:
+            setup_content : str = f.read()
+        
+        # append setup code into the placeholder
+        html_content = html_content.replace('<div id="setup-placeholder"></div>', setup_content)
+    else:
+        # delete the placeholder to keep DOM clean
+        html_content = html_content.replace('<div id="setup-placeholder"></div>', "")
+
+    # 4. send assembled page to browser
+    return HTMLResponse(content=html_content)
 
 @app.get("/{page_name}.html")
-async def serve_pages(page_name : str) -> FileResponse:
+async def serve_pages(page_name : str) -> FileResponse | RedirectResponse:
     """
-    Dynamically routes and serves specific HTML pages from the frontend directory, 
-    falling back to the custom 404 page if the file is missing.
+    Dynamically routes and serves specific HTML pages from the frontend directory.
+    If the file is missing, redirects to the dynamic error page.
 
     Args:
-        page_name (str): The specific HTML file requested by the browser.
+        page_name (str): specific HTML file requested by the browser.
 
     Returns:
-        FileResponse: The requested HTML file, or the 404.html fallback with a 404 status code.
+        RedirectResponse: requested HTML file, or a redirect to the dynamic error page.
     """
+    if page_name == "error":
+        return FileResponse(os.path.join(FRONTEND_DIR, "error.html"))
+    
     file_path : str = os.path.join(FRONTEND_DIR, f"{page_name}.html")
     if os.path.exists(file_path):
         return FileResponse(file_path)
-    return FileResponse(os.path.join(FRONTEND_DIR, "404.html"), status_code=404)
+    
+    return RedirectResponse(url="/error.html?code=404", status_code=302)
 
 @app.exception_handler(404)
-async def custom_404_handler(request: Any, __: Any) -> FileResponse:
+async def custom_404_handler(request: Any, __: Any) -> RedirectResponse:
     """
-    Intercepts standard FastAPI 404 errors and serves the custom HTML error page.
+    Intercepts standard FastAPI 404 errors and redirects to the custom dynamic error page.
 
     Args:
-        request (Any): The incoming request object that triggered the 404.
-        __ (Any): The exception object (unused).
+        request (Any): incoming request object that triggered the 404.
+        __ (Any): exception object (unused).
 
     Returns:
-        FileResponse: The custom 404.html file with a 404 status code.
+        RedirectResponse: 302 redirect to the dynamic error page with a 404 code parameter.
     """
-    return FileResponse(os.path.join(FRONTEND_DIR, "404.html"), status_code=404)
+    return RedirectResponse(url="/error.html?code=404", status_code=302)
+
+@app.exception_handler(500)
+async def custom_500_handler(request: Any, exc: Exception) -> RedirectResponse:
+    """
+    Intercepts catastrophic server crashes and redirects to the dynamic error page,
+    passing the python exception string to the frontend.
+
+    Args:
+        request (Any): incoming request object.
+        exc (Exception): unhandled exception that caused the 500 error.
+
+    Returns:
+        RedirectResponse: 302 redirect to the dynamic error page with a 500 code and error details.
+    """
+    error_detail = str(exc).replace("\n", " ")
+    return RedirectResponse(url=f"/error.html?code=500&detail={error_detail}", status_code=302)
 
 
 @app.get("/api/dashboard/summary")
 async def get_dashboard_summary() -> dict[str, int]:
     """
     Queries the SQLite database to fetch the all-time totals for the dashboard.
+
+    Raises:
+        HTTPException: if there is an error connecting to or reading from the database.
+
+    Returns:
+        dict[str, int]: dictionary containing 'total_runs' and 'total_sources'.
     """
     db_path : str = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
     
