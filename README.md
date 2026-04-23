@@ -2,6 +2,8 @@
 
 A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini API to scrape media sites and generate structured temporal metrics on autonomous vehicle perception.
 
+The system architecture connects the data collection pipeline with a web-based interface. A FastAPI backend serves as the core engine, orchestrating requests between the frontend UI, the local SQLite database, and the external data collection tools. Administrators interact with the system entirely through a dashboard built natively with HTML, CSS, and Vanilla JavaScript. This frontend provides system monitoring, configuration management via a dynamic setup wizard, and secure local authentication. Under the hood, the Python server handles the backend execution—triggering the scraping modules, managing API rate limits with dynamic model fallback cascades, and enforcing strict JSON schema validation on the Gemini AI outputs to structure the extracted data.
+
 ***
 
 ### Release (v0.1)
@@ -22,10 +24,11 @@ A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini API to scrap
     - [6. Running the Server](#6-running-the-server)
 - [Operating Web Interface](#operating-web-interface)
   - [Initial System Setup](#initial-system-setup)
+  - [Expanding the Frontend](#expanding-the-frontend)
 
 ***
 
-## Directory Structure:
+## Directory Structure
 
 ```
 waymo_perception_agent/
@@ -208,7 +211,6 @@ Server runs on local loopback. Open web browser and navigate to:
 &ensp; [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 This is the frontend interface for the entire program.  
-It allows for comprehensive system **management** and **monitoring** through a web-based dashboard.
 
 ***
 
@@ -241,5 +243,33 @@ On first launch, Global Gatekeeper forcefully redirects to Setup Wizard. Wizard 
 * Secures dashboard. Generates 24-hour session cookie and `config/auth.json` hash.
 
 Once complete, dashboard unlocks. Future visits require Admin login unless 24-hour cookie remains active. Settings sync cross-checks `params.yaml` against browser cache to prevent desyncs.
+
+<br>
+
+## Expanding the Frontend
+The frontend architecture relies on a strict Client-Side Gatekeeper (`BootManager` in `api.js`) to enforce authentication, session state, and routing rules across the application. 
+
+If you are creating new views for the dashboard (e.g., `export.html` or `graphs.html`), you **must** build upon the following HTML skeleton.  
+Including `api.js` and `auth.js` at the bottom of the `<body>` tag is mandatory. If these scripts are omitted, the page will bypass the system's security checks and fail to redirect unauthenticated or unconfigured users back to the setup wizard.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waymo Agent | [Page Title]</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
+```
+
+<br>
 
 ***
