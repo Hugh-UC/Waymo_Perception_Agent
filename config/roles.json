@@ -1,0 +1,48 @@
+{
+    "roles": {
+        "admin": {
+            "display_name": "Administrator",
+            "description": "Full system access. Can manage users, modify configurations, and run pipelines.",
+            "permissions": {
+                "run_pipeline": true,
+                "edit_config": ["read", "write", "delete"],
+                "manage_users": ["read", "write", "delete"],
+                "view_metrics": true,
+                "export_data": true
+            }
+        },
+        "editor": {
+            "display_name": "Editor",
+            "description": "Can run the pipeline and safely modify settings, but cannot delete configurations or manage users.",
+            "permissions": {
+                "run_pipeline": true,
+                "edit_config": ["read", "write"],
+                "manage_users": ["read"],
+                "view_metrics": true,
+                "export_data": true
+            }
+        },
+        "viewer": {
+            "display_name": "Viewer",
+            "description": "Read-only access. Can view the dashboard, read configs, and export data.",
+            "permissions": {
+                "run_pipeline": false,
+                "edit_config": ["read"],
+                "manage_users": [],
+                "view_metrics": true,
+                "export_data": true
+            }
+        },
+        "custom": {
+            "display_name": "Custom User",
+            "description": "Bespoke permissions configured manually by an Administrator.",
+            "permissions": {
+                "run_pipeline": false,
+                "edit_config": [],
+                "manage_users": [],
+                "view_metrics": false,
+                "export_data": false
+            }
+        }
+    }
+}

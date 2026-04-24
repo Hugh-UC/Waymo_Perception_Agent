@@ -31,11 +31,13 @@ FRONTEND_DIR : str          = os.path.join(BASE_DIR, "frontend")
 ENV_PATH : str              = os.path.join(BASE_DIR, ".env")
 PARAMS_PATH : str           = os.path.join(BASE_DIR, "config", "params.yaml")
 PREFS_JSON_PATH : str       = os.path.join(BASE_DIR, "config", "settings.json")
-AUTH_PATH : str             = os.path.join(BASE_DIR, "config", "auth.json")
 MODELS_DEFAULT_PATH : str   = os.path.join(BASE_DIR, "config", "models.base.json")
 MODELS_PATH : str           = os.path.join(BASE_DIR, "config", "models.json")
 
 from main import run_pipeline
+from tools.auth_db import create_user, verify_user, init_user_db
+
+USER_DB_PATH : str          = os.path.join(BASE_DIR, "data", "users.db")
 
 # ---------------------------------------------------------
 # Pydantic Schemas for API Payloads
@@ -67,6 +69,7 @@ class UserAccount(BaseModel):
     """
     username : str
     password : str
+    email : str = "admin@local.host" # default fallback for initial setup wizard
 
 
 # ---------------------------------------------------------
@@ -83,12 +86,31 @@ async def get_system_status() -> dict[str, Any]:
                         components, masked string values, and the current YAML config.
     """
     env_exists : bool  = os.path.exists(ENV_PATH)
-    auth_exists : bool = os.path.exists(AUTH_PATH)
+    
+    # check SQLite user DB exists and has at least one admin
+    auth_exists : bool = False
+    if os.path.exists(USER_DB_PATH):
+        try:
+            conn : sqlite3.Connection = sqlite3.connect(USER_DB_PATH)
+            cursor : sqlite3.Cursor = conn.cursor()
+
+            cursor.execute("SELECT COUNT(*) FROM users")
+
+            if cursor.fetchone()[0] > 0:
+                auth_exists = True
+
+        except sqlite3.OperationalError as e:
+            # silently handle expected first-boot error, log everything else
+            if "no such table" not in str(e).lower():
+                print(f"[System Warning] Database check failed: {e}")
+        finally:
+            # guarantee connection closes even if exception is raised
+            conn.close()
     
     # component flags
-    missing_env : bool    = True
+    missing_env : bool    = not env_exists
     missing_auth : bool   = not auth_exists
-    missing_config : bool = True
+    missing_config : bool = not os.path.exists(PARAMS_PATH)
     
     # extracted data
     masked_gemini : str | None = None
@@ -114,14 +136,14 @@ async def get_system_status() -> dict[str, Any]:
                     masked_news = "*" * 12 + n_key[-4:] if len(n_key) > 4 else "***"
 
     # 2. parse params.yaml
-    if os.path.exists(PARAMS_PATH):
+    if not missing_config:
         try:
             with open(PARAMS_PATH, "r") as f:
                 config_data = yaml.safe_load(f)
                 if config_data and "agent" in config_data:
                     missing_config = False
         except Exception:
-            pass
+            missing_config = True
 
     # 3. determine overall setup state
     needs_setup : bool = missing_env or missing_config or missing_auth
@@ -180,7 +202,7 @@ async def setup_env_file(keys : EnvSetup) -> dict[str, str]:
 @app.post("/api/register")
 async def register_user(user : UserAccount) -> dict[str, str]:
     """
-    Hashes the provided password and saves the local admin account credentials to auth.json.
+    Saves the initial local admin account credentials to the SQLite database.
 
     Args:
         user (UserAccount): plaintext username and password submitted during the setup wizard.
@@ -191,12 +213,19 @@ async def register_user(user : UserAccount) -> dict[str, str]:
     Returns:
         dict[str, str]: status dictionary confirming successful registration.
     """
-    hashed_pw : str = hashlib.sha256(user.password.encode()).hexdigest()
     try:
-        os.makedirs(os.path.dirname(AUTH_PATH), exist_ok=True)
-        with open(AUTH_PATH, "w") as f:
-            json.dump({"username": user.username, "password": hashed_pw}, f)
-        return {"status": "success"}
+        # force first user to be a Global Admin
+        success : bool = create_user(
+            username=user.username, 
+            email=user.email, 
+            password=user.password, 
+            role="admin", 
+            job_title="Global Administrator"
+        )
+        if success:
+            return {"status": "success"}
+        else:
+            raise HTTPException(status_code=400, detail="Username or Email already exists.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
@@ -208,22 +237,19 @@ async def login_api(user : UserAccount) -> dict[str, bool]:
     Args:
         user (UserAccount): login attempt containing a username and plaintext password.
 
-    Raises:
-        HTTPException: if the auth.json file does not exist (status 404).
-
     Returns:
         dict[str, bool]: dictionary containing an 'authenticated' boolean flag indicating success or failure.
     """
-    if not os.path.exists(AUTH_PATH):
-        raise HTTPException(status_code=404, detail="No account configured.")
+    if not os.path.exists(USER_DB_PATH):
+        raise HTTPException(status_code=404, detail="System not initialized.")
         
-    with open(AUTH_PATH, "r") as f:
-        stored : dict[str, str] = json.load(f)
+    user_data = verify_user(user.username, user.password)
     
-    attempt : str = hashlib.sha256(user.password.encode()).hexdigest()
-    is_valid : bool = (user.username == stored["username"] and attempt == stored["password"])
+    if user_data:
+        # Return their role so the frontend knows what UI elements to unlock
+        return {"authenticated": True, "role": user_data["role"]}
     
-    return {"authenticated": is_valid}
+    return {"authenticated": False}
 
 @app.post("/api/reset")
 async def factory_reset_system() -> dict[str, str]:
@@ -239,7 +265,7 @@ async def factory_reset_system() -> dict[str, str]:
     """
     try:
         # 1. delete auth & environment
-        if os.path.exists(AUTH_PATH): os.remove(AUTH_PATH)
+        if os.path.exists(USER_DB_PATH): os.remove(USER_DB_PATH) # Delete User DB
         if os.path.exists(ENV_PATH): os.remove(ENV_PATH)
         
         # 2. delete database
