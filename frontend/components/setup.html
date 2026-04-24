@@ -51,7 +51,7 @@ Usage: Injected dynamically by FastAPI into the <div id="setup-wizard"> containe
             </form>
         </div>
 
-        <div id="step-2" class="wizard-step hidden">
+        <div id="step-2" class="wizard-step">
             <h2>Step 2: Agent Intelligence</h2>
             <p>Configure the LLMs powering your perception analysis.</p>
             
@@ -59,7 +59,7 @@ Usage: Injected dynamically by FastAPI into the <div id="setup-wizard"> containe
                 <div class="input-group">
                     <label>Primary Model</label>
                     <div class="custom-datalist-wrapper">
-                        <input type="text" id="setup-primary-model" autocomplete="off" placeholder="Select or type model..." required>
+                        <input type="text" id="setup-primary-model" autocomplete="off" placeholder="Select or type model..." required="">
                         <ul id="primary-model-list" class="custom-options-list hidden"></ul>
                     </div>
                 </div>
@@ -69,11 +69,11 @@ Usage: Injected dynamically by FastAPI into the <div id="setup-wizard"> containe
                     <div class="help-text">Add models to serve as backups during rate limits.</div>
                     
                     <div class="fallback-controls-row">
-                        <div class="custom-datalist-wrapper fallback-input-half">
+                        <div class="custom-datalist-wrapper">
                             <input type="text" id="setup-new-fallback" autocomplete="off" placeholder="Add fallback model...">
                             <ul id="fallback-model-list" class="custom-options-list hidden"></ul>
                         </div>
-                        <button type="button" id="btn-add-setup-fallback" class="btn-primary btn-auto-height">Add</button>
+                        <button type="button" id="btn-add-setup-fallback" class="btn-primary btn-add-inline">Add</button>
                     </div>
                     
                     <div class="active-fallbacks-box">

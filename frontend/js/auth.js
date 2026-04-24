@@ -383,6 +383,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+    // ---------------------------------------------------------
+    // Global UI Nav Scroll Effect
+    // ---------------------------------------------------------
+    const topNav = document.querySelector('.top-nav');
+    if (topNav) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                topNav.classList.add('scrolled');
+            } else {
+                topNav.classList.remove('scrolled');
+            }
+        });
+    }
 
     // boot
     if (window.BootManager) window.BootManager.initialize();

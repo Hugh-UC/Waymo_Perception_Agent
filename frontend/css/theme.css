@@ -5,10 +5,12 @@
 :root {
     --bg-color: #f4f7f6;
     --surface-color: #ffffff;
-    --surface-inset: #f8f9fa; /* Slightly darker than white to look recessed */
+    --surface-color-translucent: rgba(255, 255, 255, 0.75); /* Added for frosted glass */
+    --surface-inset: #f8f9fa;
     --surface-hover: #f0f0f0;
     --text-primary: #1a1a1a;
     --text-secondary: #5a5a5a;
+    --text-muted: #888888;
     --accent-color: #0066cc;
     --accent-hover: #0052a3;
     --border-color: #e0e0e0;
@@ -22,10 +24,12 @@
     :root {
         --bg-color: #121212;
         --surface-color: #1e1e1e;
-        --surface-inset: #151515; /* Slightly darker than the #1e1e1e surface */
+        --surface-color-translucent: rgba(30, 30, 30, 0.75); /* Added for frosted glass */
+        --surface-inset: #151515;
         --surface-hover: #2d2d2d;
         --text-primary: #e0e0e0;
         --text-secondary: #a0a0a0;
+        --text-muted: #666666;
         --accent-color: #3399ff;
         --accent-hover: #66b2ff;
         --border-color: #333333;

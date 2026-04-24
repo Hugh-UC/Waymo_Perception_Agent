@@ -10,7 +10,6 @@
 <body>
 
     <div id="auth-placeholder"></div>
-    
     <div id="setup-placeholder"></div>
 
     <div id="app-container" class="hidden">
@@ -25,18 +24,17 @@
             </div>
             <div class="theme-toggle">
                 <button id="btn-theme-toggle" class="btn-nav">🌗 Theme</button>
-                <button id="btn-logout" class="btn-nav hidden" style="margin-left: 10px;">Log Out</button>
+                <button id="btn-logout" class="btn-nav hidden">Log Out</button>
             </div>
         </nav>
 
         <main class="dashboard-grid">
-            <header class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <header class="dashboard-header header-flex">
                 <h1>System Dashboard</h1>
-                <button id="btn-run-scraper" class="btn-primary" style="width: auto;">Run Scraper Now</button>
+                <button id="btn-run-scraper" class="btn-primary w-auto">Run Scraper Now</button>
             </header>
 
             <div class="settings-layout">
-                
                 <aside class="settings-sidebar">
                     <button class="sidebar-btn active" data-target="panel-overview">Overview</button>
                     <button class="sidebar-btn" data-target="panel-health">System Health</button>
@@ -59,7 +57,7 @@
                     
                     <div id="panel-health" class="settings-section hidden">
                         <h2>System Health</h2>
-                        <p>API Connectivity: <span style="color: var(--success-text); font-weight: bold;">Healthy</span></p>
+                        <p>API Connectivity: <span class="text-accent" style="font-weight: bold;">Healthy</span></p>
                     </div>
                 </div>
             </div>
