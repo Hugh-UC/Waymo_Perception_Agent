@@ -4,9 +4,10 @@ Title: FastAPI Backend Server
 Description: Serves the frontend HTML/JS/CSS, handles local authentication, and provides REST API endpoints for configuration management.
 Author: Hugh Brennan
 Date: 2026-04-22
-Version: 0.2
+Version: 0.1
 """
 import os
+import sys
 import yaml
 import json
 import shutil
@@ -24,6 +25,8 @@ app : FastAPI = FastAPI(title="Waymo Perception Agent API")
 
 # define absolute paths, prevent directory traversal issues
 BASE_DIR : str              = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 FRONTEND_DIR : str          = os.path.join(BASE_DIR, "frontend")
 ENV_PATH : str              = os.path.join(BASE_DIR, ".env")
 PARAMS_PATH : str           = os.path.join(BASE_DIR, "config", "params.yaml")
@@ -32,6 +35,7 @@ AUTH_PATH : str             = os.path.join(BASE_DIR, "config", "auth.json")
 MODELS_DEFAULT_PATH : str   = os.path.join(BASE_DIR, "config", "models.base.json")
 MODELS_PATH : str           = os.path.join(BASE_DIR, "config", "models.json")
 
+from main import run_pipeline
 
 # ---------------------------------------------------------
 # Pydantic Schemas for API Payloads
@@ -387,6 +391,31 @@ async def get_available_models() -> dict[str, list[str]]:
 
 
 # ---------------------------------------------------------
+# Execution Endpoints
+# ---------------------------------------------------------
+
+@app.post("/api/run-scraper")
+async def trigger_scraper() -> dict[str, str]:
+    """
+    Executes the full AI scraping, analysis, and database export pipeline.
+
+    Raises:
+        HTTPException: if the pipeline encounters a critical failure during execution.
+
+    Returns:
+        dict[str, str]: A success status message upon completion.
+    """
+    try:
+        success : bool = await run_pipeline()
+        if success:
+            return {"status": "success", "message": "Scraping, AI analysis, and exports complete."}
+        else:
+            raise HTTPException(status_code=500, detail="Pipeline failed during execution. Check terminal logs.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------
 # Static File Mounting & Routing
 # ---------------------------------------------------------
 @app.get("/")
@@ -526,4 +555,4 @@ app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="frontend")
 if __name__ == "__main__":
     import uvicorn
     # run server (local loopback address)
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("server.app:app", host="127.0.0.1", port=8000, reload=True)
