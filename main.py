@@ -4,7 +4,7 @@ Title: Core Orchestrator
 Description: Links the scrapers, the PydanticAI Agent, the database, and the exporter.
 Author: Hugh Brennan
 Date: 2026-04-24
-Version: 0.2
+Version: 0.1
 """
 import sys
 import asyncio

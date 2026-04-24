@@ -4,7 +4,7 @@ Title: Data Export & Visualization
 Description: Queries the SQLite database to generate raw CSV exports and native SVG visualizations.
 Author: Hugh Brennan
 Date: 2026-04-24
-Version: 0.2
+Version: 0.1
 """
 import os
 import csv

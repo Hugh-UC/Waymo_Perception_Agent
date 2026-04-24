@@ -6,7 +6,7 @@ Automatically generates missing data directories and prompts the user to securel
 download missing source code files directly from the master GitHub repository.
 Author: Hugh Brennan
 Date: 2026-04-24
-Version: 0.2
+Version: 0.1
 """
 import os
 import sys
@@ -16,7 +16,7 @@ from typing import List
 
 # The raw content URL for your GitHub repository. 
 # MUST END WITH A FORWARD SLASH. Update 'main' if your branch name is different.
-GITHUB_RAW_BASE_URL : str = "https://raw.githubusercontent.com/hugh-uc/waymo_perception_agent/main/"
+GITHUB_RAW_BASE_URL : str = "https://raw.githubusercontent.com/Hugh-UC/Waymo_Perception_Agent/main/"
 
 def _download_from_github(file_path: str, max_retries: int = 3) -> bool:
     """
