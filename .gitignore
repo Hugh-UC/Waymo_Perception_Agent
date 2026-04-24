@@ -13,5 +13,6 @@ __pycache__/
 # All Database Files
 *.db
 
-# Authentication Credentials
+# Configuration Files
 config/auth.json
+config/models.json

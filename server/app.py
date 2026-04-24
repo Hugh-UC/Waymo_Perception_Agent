@@ -9,6 +9,7 @@ Version: 0.2
 import os
 import yaml
 import json
+import shutil
 import hashlib
 import re
 import sqlite3
@@ -22,12 +23,14 @@ from pydantic import BaseModel
 app : FastAPI = FastAPI(title="Waymo Perception Agent API")
 
 # define absolute paths, prevent directory traversal issues
-BASE_DIR : str          = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FRONTEND_DIR : str      = os.path.join(BASE_DIR, "frontend")
-PARAMS_PATH : str       = os.path.join(BASE_DIR, "config", "params.yaml")
-ENV_PATH : str          = os.path.join(BASE_DIR, ".env")
-PREFS_JSON_PATH : str   = os.path.join(BASE_DIR, "config", "settings.json")
-AUTH_PATH : str         = os.path.join(BASE_DIR, "config", "auth.json")
+BASE_DIR : str              = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR : str          = os.path.join(BASE_DIR, "frontend")
+ENV_PATH : str              = os.path.join(BASE_DIR, ".env")
+PARAMS_PATH : str           = os.path.join(BASE_DIR, "config", "params.yaml")
+PREFS_JSON_PATH : str       = os.path.join(BASE_DIR, "config", "settings.json")
+AUTH_PATH : str             = os.path.join(BASE_DIR, "config", "auth.json")
+MODELS_DEFAULT_PATH : str   = os.path.join(BASE_DIR, "config", "models.base.json")
+MODELS_PATH : str           = os.path.join(BASE_DIR, "config", "models.json")
 
 
 # ---------------------------------------------------------
@@ -344,6 +347,43 @@ async def save_user_preferences(prefs : UserPreferences) -> dict[str, str]:
         return {"status": "success", "message": "settings.json updated successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save preferences: {str(e)}")
+    
+@app.get("/api/models")
+async def get_available_models() -> dict[str, list[str]]:
+    """
+    Auto-generates the local models.json from the default template if missing.
+    Parses the provider library and returns a flat list of all locked and 
+    custom models for the frontend dropdowns.
+
+    Returns:
+        dict[str, list[str]]: A dictionary containing a single 'models' key mapped to a flattened list of available model strings.
+    """
+    # bullet proof fallback models dictionary
+    fallback : dict[str, list[str]] = {"models": ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro", "gemini-2.5-flash"]}
+
+    # auto-copy template (base) if local instance doesn't exist
+    if not os.path.exists(MODELS_PATH) and os.path.exists(MODELS_DEFAULT_PATH):
+        shutil.copy(MODELS_DEFAULT_PATH, MODELS_PATH)
+
+    # use fallback incase file is not created
+    if not os.path.exists(MODELS_PATH):
+        return fallback
+        
+    try:
+        with open(MODELS_PATH, "r") as f:
+            data : dict[str, Any] = json.load(f)
+            
+        all_models : list[str] = []
+        providers : dict[str, Any] = data.get("providers", {})
+        
+        # flatten locked and custom arrays
+        for provider_data in providers.values():
+            all_models.extend(provider_data.get("locked_defaults", []))
+            all_models.extend(provider_data.get("custom_added", []))
+            
+        return {"models": all_models}
+    except Exception as e:
+        return fallback
 
 
 # ---------------------------------------------------------
@@ -404,6 +444,10 @@ async def serve_pages(page_name : str) -> FileResponse | RedirectResponse:
     if page_name == "error":
         return FileResponse(os.path.join(FRONTEND_DIR, "error.html"))
     
+    # prevent users from bypassing Python HTML injector
+    if page_name == "index":
+        return RedirectResponse(url="/", status_code=302)
+
     file_path : str = os.path.join(FRONTEND_DIR, f"{page_name}.html")
     if os.path.exists(file_path):
         return FileResponse(file_path)

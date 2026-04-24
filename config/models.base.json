@@ -1,0 +1,38 @@
+{
+    "settings": {
+        "primary_provider": "gemini",
+        "access_control": {
+            "roles": {
+                "admin": {
+                    "scope": ["read", "write", "delete"]
+                }
+            }
+        }
+    },
+    "providers": {
+        "gemini": {
+            "locked_defaults": [
+                "gemini-3.1-pro-preview",
+                "gemini-3.1-flash-lite-preview",
+                "gemini-3-flash-preview",
+                "gemini-2.5-pro",
+                "gemini-2.5-flash",
+                "gemini-1.5-pro",
+                "gemini-1.5-flash"
+            ],
+            "custom_added": []
+        },
+        "openai": {
+            "locked_defaults": ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+            "custom_added": []
+        },
+        "anthropic": {
+            "locked_defaults": ["claude-3-5-sonnet", "claude-3-opus", "claude-3-haiku"],
+            "custom_added": []
+        },
+        "xai": {
+            "locked_defaults": ["grok-1", "grok-2"],
+            "custom_added": []
+        }
+    }
+}
