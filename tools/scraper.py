@@ -57,7 +57,7 @@ def scrape_waymo_news() -> str:
 
     try:
         response : requests.Response = requests.get(url)
-        response.raise_for_status()     # throws an error if the web request fails (e.g., 401 Unauthorized)
+        response.raise_for_status()     # throws error if web request fails
         data : dict[str, Any] = response.json()
         
         # grab the most relevant articles
@@ -90,7 +90,7 @@ def scrape_waymo_news() -> str:
 
 def scrape_reddit_sentiment(subreddit: list[str] | None = None) -> str:
     """
-    Simulates fetching recent posts and comments from Reddit.
+    Fetches recent posts and comments from Reddit.
     Subreddit parameter is pulled from config.yaml.
 
     Args:
@@ -99,25 +99,40 @@ def scrape_reddit_sentiment(subreddit: list[str] | None = None) -> str:
     Returns:
         str: compiled string of fetched content.
     """
-    if subreddit:
-        source : str = ", ".join([f"r/{sub}" for sub in subreddit])
-
-    # TEMP --- for testing before gaining reddit api access
-    subreddit = config['scraper']['reddit']['subreddit']
+    reddit_cfg : dict[str, Any] = config['scraper']['reddit']
+    subreddits : list[str]      = reddit_cfg.get('subreddit', [])
+    max_posts : int             = reddit_cfg.get('max_posts', 10)
     
-    mock_reddit_data : str = (
-        f"SOURCE: Reddit\n"
-        f"LOCATION: r/{subreddit}\n\n"
-        f"Post: Just took my first Waymo ride in San Francisco!\n"
-        f"Comment 1: It was surprisingly smooth, much better than human Uber drivers. Felt perfectly safe. 10/10.\n"
-        f"Comment 2: I hate these things. One blocked my driveway for 10 minutes yesterday while it was confused by a garbage truck.\n"
-        f"Comment 3: The tech is objectively impressive, but I'm deeply worried about what happens to local taxi and delivery jobs in the next 5 years."
-    )
-    
-    return mock_reddit_data
+    compiled_data : str = "SOURCE: Reddit\n\n"
 
+    # bypass 429 error: reddit blocks python's default user-agent
+    headers = {'User-Agent': 'WaymoPerceptionAgent/1.0 (Data Pipeline)'}
 
-# 
+    for sub in subreddits:
+        compiled_data += f"--- Location: r/{sub} ---\n"
+        url = f"https://www.reddit.com/r/{sub}/search.json?q=waymo&restrict_sr=on&sort=new&limit={max_posts}"
+        
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            posts = response.json().get('data', {}).get('children', [])
+            
+            for i, post in enumerate(posts):
+                post_data = post['data']
+                title = post_data.get('title', '')
+                text = post_data.get('selftext', '').replace('\n', ' ')
+                
+                # cap extremely long reddit posts to save LLM tokens
+                if len(text) > 1000: text = text[:1000] + "..."
+                
+                compiled_data += f"Post {i+1}: {title}\nContent: {text}\n\n"
+                
+        except Exception as e:
+            compiled_data += f"[Error fetching r/{sub}: {e}]\n\n"
+            
+    return compiled_data
+
+ 
 if __name__ == "__main__":
     # quick test block to ensure it works when you run this file directly
     days_back : float | int = config['scraper']['news']['days_back']
