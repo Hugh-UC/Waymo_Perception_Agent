@@ -4,8 +4,8 @@
  * Description: Manages the UI state, strict input validation, multi-tier saving 
  * (Cookie, JSON Backup, YAML config), desync reconciliation, and dynamic Datalists.
  * Author: Hugh Brennan
- * Date: 2026-04-22
- * Version: 0.1
+ * Date: 2026-04-24
+ * Version: 0.2
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -47,7 +47,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         customDiv.id = "custom-models-container";
         customDiv.className = "tag-container";
         customDiv.style.marginTop = "10px";
-        agentModelInput.parentElement.appendChild(customDiv);
+        // Append safely to the outer input-group to avoid breaking the relative position wrapper
+        agentModelInput.closest(".input-group").appendChild(customDiv);
     }
 
     function getCustomModels() {
@@ -71,19 +72,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateModelDatalists() {
-        const datalist = document.getElementById("model-options-list");
-        if (!datalist) return;
-        datalist.innerHTML = ""; 
-        
-        // Merge hardcoded defaults with user's custom additions
-        const allModels = new Set([...defaultModels, ...getCustomModels()]);
-
-        allModels.forEach(model => {
-            const option = document.createElement("option");
-            option.value = model;
-            datalist.appendChild(option);
-        });
-
+        // Feed custom models into the global DatalistManager so the UI renders them
+        if (window.DatalistManager) {
+            const apiModels = window.DatalistManager.availableModels || [];
+            const allModels = new Set([...apiModels, ...defaultModels, ...getCustomModels()]);
+            window.DatalistManager.availableModels = Array.from(allModels);
+        }
         renderCustomModelTags();
     }
 
@@ -181,6 +175,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function initializeSettings() {
         try {
+            // Fetch models for Datalist setup FIRST
+            if (window.DatalistManager) {
+                await window.DatalistManager.initialize();
+                updateModelDatalists();
+                window.DatalistManager.setup("agent-model", "settings-primary-list");
+                window.DatalistManager.setup("new-fallback-model", "settings-fallback-list");
+            }
+
             const configRes = await fetch("/api/config");
             actualProjectConfig = await configRes.json();
             const prefsRes = await fetch("/api/preferences");
@@ -422,5 +424,94 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 4000);
     }
 
+    // ---------------------------------------------------------
+    // 8. User Management Controller
+    // ---------------------------------------------------------
+    const usersTbody = document.getElementById("users-tbody");
+    const roleSelect = document.getElementById("new-role");
+    const addUserForm = document.getElementById("add-user-form");
+
+    /**
+     * Fetches user and role data from the backend to dynamically populate 
+     * the User Management table and the "Add User" role dropdown.
+     */
+    async function loadUserManagement() {
+        if (!usersTbody || !roleSelect) return;
+
+        try {
+            // 1. populate roles dropdown
+            const rolesData = await window.API.getRoles();
+            roleSelect.innerHTML = "";
+            for (const [key, role] of Object.entries(rolesData.roles)) {
+                const option = document.createElement("option");
+                option.value = key;
+                option.textContent = role.display_name;
+                roleSelect.appendChild(option);
+            }
+
+            // 2. populate users table
+            const users = await window.API.getUsers();
+            usersTbody.innerHTML = "";
+            users.forEach(user => {
+                const tr = document.createElement("tr");
+                tr.style.borderBottom = "1px solid var(--border-color)";
+                
+                const loginDate = user.last_login ? new Date(user.last_login).toLocaleString() : "Never";
+                const isMasterAdmin = user.id === 1;
+
+                tr.innerHTML = `
+                    <td><strong>${user.username}</strong><br><small class="text-muted">${user.email}</small></td>
+                    <td><span class="role-badge">${user.role}</span></td>
+                    <td style="font-size: 0.9rem;">${loginDate}</td>
+                    <td>
+                        ${!isMasterAdmin ? `<button class="btn-delete-user" data-id="${user.id}">Delete</button>` : '<span class="text-muted text-sm">Protected</span>'}
+                    </td>
+                `;
+                usersTbody.appendChild(tr);
+            });
+
+            // 3. attach delete listeners
+            document.querySelectorAll(".btn-delete-user").forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                    if (confirm("Are you sure you want to permanently delete this user?")) {
+                        try {
+                            await window.API.deleteUser(e.target.dataset.id);
+                            loadUserManagement(); // Refresh table
+                        } catch (error) {
+                            alert(error.detail || "Failed to delete user.");
+                        }
+                    }
+                });
+            });
+
+        } catch (error) {
+            console.error("Failed to load user management data:", error);
+        }
+    }
+
+    // handle form submission
+    if (addUserForm) {
+        addUserForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const payload = {
+                username: document.getElementById("new-username").value,
+                email: document.getElementById("new-email").value,
+                password: document.getElementById("new-password").value,
+                role: document.getElementById("new-role").value,
+                job_title: document.getElementById("new-job-title").value
+            };
+
+            try {
+                await window.API.addUser(payload);
+                addUserForm.reset();
+                loadUserManagement(); // refresh table
+                alert("User created successfully!");
+            } catch (error) {
+                alert(error.detail || "Failed to create user.");
+            }
+        });
+    }
+
     initializeSettings();
+    loadUserManagement(); // init users tab immediately
 });

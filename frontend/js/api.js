@@ -130,6 +130,37 @@ const API = {
         return res.json();
     },
 
+    // ---------------------------------------------------------
+    // User Management Endpoints
+    // ---------------------------------------------------------
+    async getRoles() {
+        const res = await fetch("/api/roles");
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
+
+    async getUsers() {
+        const res = await fetch("/api/users");
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
+
+    async addUser(payload) {
+        const res = await fetch("/api/users/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
+
+    async deleteUser(userId) {
+        const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
+
     /**
      * Fetches the registered AI models to populate the custom dropdowns.
      */
