@@ -258,7 +258,7 @@ Including `api.js` and `auth.js` at the bottom of the `<body>` tag is mandatory.
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waymo Agent | [Page Title]</title>
+    <title>Waymo Agent | [Page_Title]</title>
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/style.css">
 </head>

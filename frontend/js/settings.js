@@ -5,7 +5,7 @@
  * (Cookie, JSON Backup, YAML config), desync reconciliation, and dynamic Datalists.
  * Author: Hugh Brennan
  * Date: 2026-04-22
- * Version: 0.4
+ * Version: 0.1
  */
 
 document.addEventListener("DOMContentLoaded", async () => {

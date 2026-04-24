@@ -1,25 +1,19 @@
-# Master Configuration for Waymo Perception Agent
 scraper:
   news:
-    query: "Waymo"
-    days_back: 5              # exclusion limit for article inclusion (1 - 7)
-    max_articles: 20          # limits articles to search (5 - 30)
+    query: Waymo
+    days_back: 5
+    max_articles: 20
   reddit:
     subreddit:
-    - "SelfDrivingCars"
-    - "Waymo"
-    - "AutonomousVehicles"
-    max_posts: 10             # limits reddit posts to search (5 - 15)
-
+    - SelfDrivingCars
+    - Waymo
+    - AutonomousVehicles
+    max_posts: 10
 agent:
-  model_name: "gemini-3-flash-preview"  # Primary Model, use paid model for better results ("gemini-3.1-pro-preview")
-  fallback_model:                       # Stable 'Free Tier' backup model
-  - "gemini-3.1-flash-lite-preview"
-  - "gemini-2.5-flash"
-  temperature: 0.2                      # Lower temperature = more analytical and strict JSON adherence
-  retries: 3                            # General API/tool failure retries
-  output_retries: 5                     # Specific retries for API output
-
-# 'model_name' alternatives:
-#   current:  "gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview", "gemini-3.1-pro-preview-customtools"
-#    legacy:  "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemma-4-26b-it", "gemma-4-31b-it"
+  model_name: gemini-3-flash-preview
+  fallback_model:
+  - gemini-3.1-flash-lite-preview
+  - gemini-2.5-flash
+  temperature: 0.2
+  retries: 3
+  output_retries: 5
