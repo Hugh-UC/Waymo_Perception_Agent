@@ -5,7 +5,7 @@
  * strict routing rules based on the system's setup and session state.
  * Author: Hugh Brennan
  * Date: 2026-04-22
- * Version: 0.4
+ * Version: 0.1
  */
 
 const API = {
@@ -118,7 +118,16 @@ const API = {
         });
         if (!res.ok) throw await res.json();
         return res.json();
-    }
+    },
+
+    /**
+     * Fetches the registered AI models to populate the custom dropdowns.
+     */
+    async getModels() {
+        const res = await fetch("/api/models");
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
 };
 
 const BootManager = {
@@ -138,6 +147,14 @@ const BootManager = {
                 if (!isIndex) { 
                     window.location.href = '/'; 
                     return; 
+                }
+                
+                // RULE 2: check if the wizard exists before unlocking
+                const wizard = document.getElementById("setup-wizard");
+                if (wizard) {
+                    wizard.classList.remove("hidden");
+                } else {
+                    console.error("Critical: setup-wizard not found in DOM. Python injection bypassed.");
                 }
                 
                 // unlock the wizard overlay and prepopulate forms

@@ -5,7 +5,7 @@
  * and a persistent multi-step wizard.
  * Author: Hugh Brennan
  * Date: 2026-04-22
- * Version: 0.4
+ * Version: 0.1
  */
 
 const AuthManager = {
@@ -161,7 +161,14 @@ const AuthManager = {
 window.AuthManager = AuthManager;
 
 // progress controller
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    // initialize custom dropdowns (external controller)
+    if (window.DatalistManager) {
+        await window.DatalistManager.initialize();
+        window.DatalistManager.setup("setup-primary-model", "primary-model-list");
+        window.DatalistManager.setup("setup-new-fallback", "fallback-model-list");
+    }
+
     // get modal elements
     const wizardModal = document.getElementById("setup-wizard");
     const loginModal = document.getElementById("login-overlay");
