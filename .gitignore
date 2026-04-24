@@ -16,3 +16,7 @@ __pycache__/
 # Configuration Files
 config/auth.json
 config/models.json
+
+# Generated Pipeline Exports
+exports/csv/*.csv
+exports/graphs/*.svg
