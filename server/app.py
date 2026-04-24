@@ -35,7 +35,7 @@ MODELS_DEFAULT_PATH : str   = os.path.join(BASE_DIR, "config", "models.base.json
 MODELS_PATH : str           = os.path.join(BASE_DIR, "config", "models.json")
 
 from main import run_pipeline
-from tools.auth_db import create_user, verify_user, init_user_db
+from tools.auth_db import create_user, verify_user, init_user_db, get_all_users, delete_user
 
 USER_DB_PATH : str          = os.path.join(BASE_DIR, "data", "users.db")
 
@@ -70,6 +70,16 @@ class UserAccount(BaseModel):
     username : str
     password : str
     email : str = "admin@local.host" # default fallback for initial setup wizard
+
+class NewUser(BaseModel):
+    """
+    Schema for adding new users via the Admin dashboard.
+    """
+    username: str
+    email: str
+    password: str
+    role: str
+    job_title: str = ""
 
 
 # ---------------------------------------------------------
@@ -258,10 +268,11 @@ async def factory_reset_system() -> dict[str, str]:
     and the SQLite database. Overwrites params.yaml with baseline defaults.
 
     Raises:
-        HTTPException: _description_
+        HTTPException: if server encounters file system error while attempting 
+                       to delete files or rewrite configuration (status 500).
 
     Returns:
-        dict[str, str]: _description_
+        dict[str, str]: status dictionary confirming successful wipe and system reset.
     """
     try:
         # 1. delete auth & environment
@@ -293,6 +304,75 @@ async def factory_reset_system() -> dict[str, str]:
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")
+
+
+# ---------------------------------------------------------
+# User Management Endpoints
+# ---------------------------------------------------------
+@app.get("/api/roles")
+async def get_roles() -> dict[str, Any]:
+    """
+    Retrieves the roles.json file to populate frontend dropdowns.
+
+    Returns:
+        dict[str, Any]: dictionary representation of the roles and their associated permission scopes.
+    """
+    roles_path = os.path.join(BASE_DIR, "config", "roles.json")
+    if not os.path.exists(roles_path):
+        return {"roles": {}}
+    with open(roles_path, "r") as f:
+        return json.load(f)
+
+@app.get("/api/users")
+async def fetch_users() -> list[dict[str, Any]]:
+    """
+    Retrieves all registered users.
+
+    Returns:
+        list[dict[str, Any]]: list of dictionaries, where each dictionary represents a user's profile data (excluding password hashes).
+    """
+    return get_all_users()
+
+@app.post("/api/users/add")
+async def add_new_user(user: NewUser) -> dict[str, str]:
+    """
+    Creates a new user from the admin dashboard.
+
+    Args:
+        user (NewUser): structured payload containing the new user's credentials and role assignments.
+
+    Raises:
+        HTTPException: if provided username or email already exists in database (status 400).
+
+    Returns:
+        dict[str, str]: status dictionary confirming successful creation.
+    """
+    success = create_user(user.username, user.email, user.password, user.role, user.job_title)
+    if success:
+        return {"status": "success", "message": "User added successfully."}
+    raise HTTPException(status_code=400, detail="Username or email already exists.")
+
+@app.delete("/api/users/{user_id}")
+async def remove_user(user_id: int) -> dict[str, str]:
+    """
+    Deletes a user. Prevents deletion of the Master Admin (ID 1).
+
+    Args:
+        user_id (int): unique integer ID of the user to be deleted.
+
+    Raises:
+        HTTPException: If an attempt is made to delete Master Administrator (ID 1) (status 403).
+        HTTPException: If database deletion operation fails (status 500).
+
+    Returns:
+        dict[str, str]: status dictionary confirming successful deletion.
+    """
+    if user_id == 1:
+        raise HTTPException(status_code=403, detail="Cannot delete the Master Administrator.")
+    
+    if delete_user(user_id):
+        return {"status": "success"}
+    raise HTTPException(status_code=500, detail="Failed to delete user.")
 
 
 # ---------------------------------------------------------

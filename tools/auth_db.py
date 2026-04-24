@@ -11,6 +11,7 @@ import os
 import sqlite3
 import hashlib
 from datetime import datetime
+from typing import Any
 
 # isolate user data from metrics data
 DB_PATH : str = os.path.join("data", "users.db")
@@ -122,6 +123,50 @@ def verify_user(username: str, password: str) -> dict | None:
     except Exception as e:
         print(f"[Auth DB Error] Verification failed: {e}")
         return None
+    
+def get_all_users() -> list[dict[str, Any]]:
+    """
+    Retrieves all users from the database, excluding password hashes.
+
+    Returns:
+        list[dict[str, Any]]: list of dictionaries containing safe user data for frontend table.
+    """
+    try:
+        conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor : sqlite3.Cursor = conn.cursor()
+        
+        # explicitly select columns to avoid returning password_hash
+        cursor.execute("SELECT id, username, email, role, job_title, created_at, last_login, two_factor_enabled FROM users")
+        users = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        return users
+    except Exception as e:
+        print(f"[Auth DB Error] Failed to retrieve users: {e}")
+        return []
+
+def delete_user(user_id: int) -> bool:
+    """
+    Deletes a user from the database by their ID.
+
+    Args:
+        user_id (int): primary key ID of the user to remove.
+
+    Returns:
+        bool: True if the user was successfully deleted, False otherwise.
+    """
+    try:
+        conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
+        cursor : sqlite3.Cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"[Auth DB Error] Failed to delete user: {e}")
+        return False
 
 
 if __name__ == "__main__":
