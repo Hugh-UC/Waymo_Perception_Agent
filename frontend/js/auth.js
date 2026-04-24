@@ -169,6 +169,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.DatalistManager.setup("setup-new-fallback", "fallback-model-list");
     }
 
+    // dashboard scraper trigger controller
+    const runBtn = document.getElementById("btn-run-scraper");
+    if (runBtn) {
+        runBtn.addEventListener("click", async () => {
+            runBtn.textContent = "Running Agent... (Please wait)";
+            runBtn.disabled = true;
+            runBtn.style.opacity = "0.7";
+            
+            try {
+                await window.API.runScraper();
+                runBtn.textContent = "Run Scraper Now";
+                runBtn.disabled = false;
+                runBtn.style.opacity = "1";
+                alert("Pipeline Complete! Check the exports/ folder.");
+                window.location.reload(); // Refresh to update dashboard numbers
+            } catch (error) {
+                alert("Pipeline Failed: " + (error.detail || "Check server logs."));
+                runBtn.textContent = "Run Scraper Now";
+                runBtn.disabled = false;
+                runBtn.style.opacity = "1";
+            }
+        });
+    }
+
     // get modal elements
     const wizardModal = document.getElementById("setup-wizard");
     const loginModal = document.getElementById("login-overlay");

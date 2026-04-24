@@ -48,6 +48,16 @@ const API = {
     },
 
     /**
+     * Triggers the backend AI pipeline execution.
+     * Expected Response: { status, message }
+     */
+    async runScraper() {
+        const res = await fetch("/api/run-scraper", { method: "POST" });
+        if (!res.ok) throw await res.json();
+        return res.json();
+    },
+
+    /**
      * Registers the local administrator account.
      * @param {Object} payload - { username: string, password: string }
      */
