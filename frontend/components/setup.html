@@ -6,102 +6,107 @@ Author: Hugh Brennan
 Date: 2026-04-23
 Usage: Injected dynamically by FastAPI into the <div id="setup-wizard"> container within index.html ONLY when the system detects missing parameters.
 -->
-<div class="modal-content wizard-box">
-            
-    <div class="progress-container">
-        <div id="progress-fill" class="progress-fill"></div>
-    </div>
-
-    <div id="step-0" class="wizard-step">
-        <h2 style="color: var(--accent-color);">Welcome to Waymo Agent</h2>
-        <p>Before you can run the perception scraper, we need to securely connect your APIs and configure your local administrator account.</p>
-
-        <div id="wizard-start-actions" style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-direction: column;">
-            <button id="btn-start-wizard" class="btn-primary">Begin Configuration Setup</button>
-            <button id="btn-continue-wizard" class="btn-primary hidden" style="background: var(--success-text);">Continue Configuration Setup</button>
-            <button id="btn-restart-wizard" class="btn-primary hidden" style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-color);">New Configuration</button>
+<div id="setup-wizard" class="modal-overlay hidden">
+    <div class="modal-content wizard-box">
+                
+        <div class="progress-container">
+            <div id="progress-fill" class="progress-fill"></div>
         </div>
-    </div>
 
-    <div id="step-1" class="wizard-step hidden">
-        <h2>Step 1: API Integration</h2>
-        <p>Enter your keys to enable the AI Agent.</p>
-        
-        <form id="form-step-1">
-            <div class="input-group">
-                <label style="text-align: left;">Google Gemini API Key:</label>
-                <input type="text" id="setup-gemini" placeholder="Gemini API Key" required>
-                <div id="clear-gemini-wrapper" class="hidden" style="text-align: left; margin-top: 0.25rem;">
-                    <span id="btn-clear-gemini" class="clear-key-text">Clear key</span>
+        <div id="step-0" class="wizard-step">
+            <h2>Welcome to Waymo Agent</h2>
+            <p>Before you can run the perception scraper, we need to securely connect your APIs and configure your local administrator account.</p>
+
+            <div id="wizard-start-actions" class="wizard-action-group">
+                <button id="btn-start-wizard" class="btn-primary">Begin Configuration Setup</button>
+                <button id="btn-continue-wizard" class="btn-primary btn-success hidden">Continue Configuration Setup</button>
+                <button id="btn-restart-wizard" class="btn-primary btn-outline hidden">Start New Configuration</button>
+            </div>
+        </div>
+
+        <div id="step-1" class="wizard-step hidden">
+            <h2>Step 1: API Configuration</h2>
+            <p>Enter your API keys. These are saved locally to your <code class="code-snippet">.env</code> file and never transmitted.</p>
+            
+            <form id="form-step-1">
+                <div class="input-group">
+                    <label for="setup-gemini">Gemini API Key</label>
+                    <input type="text" id="setup-gemini" placeholder="AI Studio Key">
+                    <div id="clear-gemini-wrapper" class="clear-key-wrapper hidden">
+                        <button type="button" id="btn-clear-gemini" class="btn-clear">Clear saved key</button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="input-group">
-                <label style="text-align: left;">NewsAPI.org Key:</label>
-                <input type="text" id="setup-news" placeholder="NewsAPI Key" required>
-                <div id="clear-news-wrapper" class="hidden" style="text-align: left; margin-top: 0.25rem;">
-                    <span id="btn-clear-news" class="clear-key-text">Clear key</span>
+                
+                <div class="input-group">
+                    <label for="setup-news">NewsAPI Key</label>
+                    <input type="text" id="setup-news" placeholder="NewsAPI Key">
+                    <div id="clear-news-wrapper" class="clear-key-wrapper hidden">
+                        <button type="button" id="btn-clear-news" class="btn-clear">Clear saved key</button>
+                    </div>
                 </div>
-            </div>
+                
+                <div id="setup-error" class="error-text hidden"></div>
+                
+                <button type="submit" class="btn-primary btn-block">Save Keys & Continue</button>
+            </form>
+        </div>
+
+        <div id="step-2" class="wizard-step hidden">
+            <h2>Step 2: Agent Intelligence</h2>
+            <p>Configure the LLMs powering your perception analysis.</p>
             
-            <div id="setup-error" class="error-text hidden"></div>
-            
-            <button type="submit" class="btn-primary" style="width: 100%;">Save & Continue</button>
-        </form>
-    </div>
-
-    <div id="step-2" class="wizard-step hidden">
-        <h2>Step 2: Agent Intelligence</h2>
-        <p>Configure the LLMs powering your perception analysis.</p>
-        
-        <form id="form-step-2">
-            <datalist id="model-options-list">
-                <option value="gemini-3.1-pro-preview">
-                <option value="gemini-3-flash-preview">
-                <option value="gemini-2.5-pro">
-                <option value="gemini-3.1-flash-lite-preview">
-                <option value="gemini-2.5-flash">
-            </datalist>
-
-            <div class="input-group" style="text-align: left;">
-                <label>Primary Model</label>
-                <input type="text" id="setup-primary-model" list="model-options-list" placeholder="Select or type model..." required>
-            </div>
-
-            <div class="input-group" style="text-align: left;">
-                <label>Fallback Models (Priority Order)</label>
-                <div class="help-text">Add models to serve as backups during rate limits.</div>
-                <div class="flex-input">
-                    <input type="text" id="setup-new-fallback" list="model-options-list" placeholder="Add fallback model...">
-                    <button type="button" id="btn-add-setup-fallback" class="btn-primary" style="width: auto;">Add</button>
+            <form id="form-step-2">
+                <div class="input-group">
+                    <label>Primary Model</label>
+                    <div class="custom-datalist-wrapper">
+                        <input type="text" id="setup-primary-model" autocomplete="off" placeholder="Select or type model..." required>
+                        <ul id="primary-model-list" class="custom-options-list hidden"></ul>
+                    </div>
                 </div>
-                <div id="setup-fallback-tags" class="tag-container"></div>
-                <div id="setup-fallback-error" class="error-text hidden" style="margin-top: 0.5rem;"></div>
-            </div>
-            
-            <div id="setup-model-error" class="error-text hidden"></div>
-            
-            <button type="submit" class="btn-primary" style="width: 100%;">Save Models & Continue</button>
-        </form>
-    </div>
+                
+                <div class="input-group">
+                    <label>Fallback Models (Optional Cascade)</label>
+                    <div class="help-text">Add models to serve as backups during rate limits.</div>
+                    
+                    <div class="fallback-controls-row">
+                        <div class="custom-datalist-wrapper fallback-input-half">
+                            <input type="text" id="setup-new-fallback" autocomplete="off" placeholder="Add fallback model...">
+                            <ul id="fallback-model-list" class="custom-options-list hidden"></ul>
+                        </div>
+                        <button type="button" id="btn-add-setup-fallback" class="btn-primary btn-auto-height">Add</button>
+                    </div>
+                    
+                    <div class="active-fallbacks-box">
+                        <div class="active-fallbacks-heading">Active Fallbacks</div>
+                        <div id="setup-fallback-tags" class="tag-container"></div>
+                    </div>
+                    
+                    <div id="setup-fallback-error" class="error-text hidden"></div>
+                </div>
+                
+                <div id="setup-model-error" class="error-text hidden"></div>
+                <button type="submit" class="btn-primary btn-block">Save Models & Continue</button>
+            </form>
+        </div>
 
-    <div id="step-3" class="wizard-step hidden">
-        <h2>Step 3: Local Security</h2>
-        <p>Create your credentials for this browser session.</p>
-        
-        <form id="form-step-3">
-            <div class="input-group">
-                <input type="text" id="new-user" placeholder="Admin Username" required>
-            </div>
+        <div id="step-3" class="wizard-step hidden">
+            <h2>Step 3: Local Security</h2>
+            <p>Create your credentials for this browser session.</p>
             
-            <div class="input-group">
-                <div class="help-text" style="text-align: left;">Minimum 8 characters.</div>
-                <input type="password" id="new-pass" placeholder="Admin Password" minlength="8" required>
-            </div>
-            
-            <div id="register-error" class="error-text hidden"></div>
-            
-            <button type="submit" class="btn-primary" style="background: var(--success-text); width: 100%;">Create Account & Finish</button>
-        </form>
+            <form id="form-step-3">
+                <div class="input-group">
+                    <input type="text" id="new-user" placeholder="Admin Username" autocomplete="username" required>
+                </div>
+                
+                <div class="input-group">
+                    <div class="help-text">Minimum 8 characters.</div>
+                    <input type="password" id="new-pass" placeholder="Admin Password" minlength="8" autocomplete="new-password" required>
+                </div>
+                
+                <div id="register-error" class="error-text hidden"></div>
+                
+                <button type="submit" class="btn-primary btn-success btn-block">Create Account & Finish</button>
+            </form>
+        </div>
     </div>
 </div>

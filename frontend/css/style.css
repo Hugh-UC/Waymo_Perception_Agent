@@ -119,12 +119,18 @@ body {
     font-weight: 600; 
 }
 
-.input-group input, 
-.input-group select { 
+.input-group input { 
     padding: 0.75rem; 
     border: 1px solid var(--border-color); 
     border-radius: 4px; 
-    font-size: 1rem; 
+    font-size: 1rem;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+}
+
+.input-group input:focus {
+    border-color: var(--accent-color);
+    outline: none;
 }
 
 .flex-input { 
@@ -133,32 +139,107 @@ body {
     margin-bottom: 0.5rem; 
 }
 
+.help-text { 
+    font-size: 0.8rem; 
+    margin-top: -0.25rem; 
+    margin-bottom: 1rem; 
+    text-align: left;
+    color: var(--text-secondary);
+}
+
+/* Custom Datalist Dropdowns */
+.custom-datalist-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-options-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--bg-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    margin: 4px 0 0 0;
+    padding: 0;
+    list-style: none;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.custom-options-list li {
+    padding: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: background 0.2s;
+}
+
+.custom-options-list li:last-child {
+    border-bottom: none;
+}
+
+.custom-options-list li:hover {
+    background-color: var(--surface-hover);
+    color: var(--accent-color);
+}
+
+/* -----------------------------------------
+   Button Utilities 
+   ----------------------------------------- */
 .btn-primary { 
     padding: 1rem; 
     border: none; 
     border-radius: 4px; 
     font-weight: bold; 
     cursor: pointer; 
+    background: var(--accent-color);
+    color: #fff;
 }
 
-.help-text { 
-    font-size: 0.8rem; 
-    margin-top: -0.25rem; 
-    margin-bottom: 1rem; 
+.btn-success {
+    background: var(--success-bg) !important;
+    color: var(--success-text) !important;
 }
 
-/* Masked Input Clear Key Style */
-.clear-key-text {
-    color: var(--error-color);
+.btn-outline {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.btn-block {
+    width: 100% !important;
+}
+
+.btn-clear {
+    padding: 0.2rem 0.5rem;
+    color: var(--text-primary);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
     font-size: 0.8rem;
     cursor: pointer;
-    text-decoration: underline;
-    font-weight: bold;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease;
 }
 
-.clear-key-text:hover {
-    opacity: 0.8;
+.btn-clear:hover {
+    background: var(--error-bg);
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+/* -----------------------------------------
+   Tags & Code Blocks
+   ----------------------------------------- */
+.code-snippet {
+    background: var(--surface-hover);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
 }
 
 .tag-container { 
@@ -166,6 +247,7 @@ body {
     flex-wrap: wrap; 
     gap: 0.5rem; 
     margin-top: 0.5rem; 
+    min-height: 24px;
 }
 
 .tag { 
@@ -184,8 +266,27 @@ body {
     font-weight: bold; 
 }
 
+/* Masked Input Clear Key Style */
+.clear-key-wrapper {
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+.clear-key-text {
+    color: var(--error-color);
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: bold;
+    transition: opacity 0.2s;
+}
+
+.clear-key-text:hover {
+    opacity: 0.8;
+}
+
 /* -----------------------------------------
-   Modals (Login & Desync Engine) 
+   Modals (Setup Wizard & Overlays)
    ----------------------------------------- */
 .modal-overlay {
     position: fixed; 
@@ -213,20 +314,17 @@ body {
     margin-top: 1rem; 
 }
 
-.diff-list { 
-    background: var(--bg-color); 
-    padding: 1rem; 
-    border-radius: 4px; 
-    font-family: monospace; 
-    font-size: 0.9rem; 
-    margin-bottom: 1.5rem; 
-    max-height: 200px; 
-    overflow-y: auto;
+.wizard-step > h2 {
+    color: var(--accent-color);
 }
 
-/* -----------------------------------------
-   Progress Bar (Setup Wizard)
-   ----------------------------------------- */
+.wizard-action-group {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+}
+
 .progress-container {
     width: 100%;
     background: var(--border-color);
@@ -241,6 +339,43 @@ body {
     background: var(--accent-color);
     width: 0%;
     transition: width 0.4s ease;
+}
+
+/* -----------------------------------------
+   Setup Wizard Specific Modifiers
+   ----------------------------------------- */
+.fallback-controls-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.fallback-input-half {
+    width: 50% !important;
+}
+
+.btn-auto-height {
+    width: auto !important;
+    height: fit-content !important;
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.85rem !important;
+}
+
+.active-fallbacks-box {
+    background: var(--surface-inset, rgba(128, 128, 128, 0.05));
+    border: 1px solid var(--border-color);
+    padding: 0.75rem;
+    border-radius: 4px;
+}
+
+.active-fallbacks-heading {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* -----------------------------------------
@@ -282,12 +417,12 @@ body {
     color: white;
 }
 
+
 /* =========================================
    RESPONSIVE DESIGN (Mobile & Tablets)
    ========================================= */
 @media screen and (max-width: 768px) {
     
-    /* Stack the Navigation Bar */
     .top-nav {
         flex-direction: column;
         gap: 1rem;
@@ -301,7 +436,6 @@ body {
         gap: 0.5rem;
     }
 
-    /* Stack Dashboard Header Buttons */
     .dashboard-header {
         flex-direction: column;
         align-items: flex-start !important;
@@ -312,7 +446,6 @@ body {
         padding: 1rem;
     }
 
-    /* Convert Sidebar to Top-Tab Navigation */
     .settings-layout {
         flex-direction: column;
         gap: 1rem;
@@ -325,7 +458,7 @@ body {
         border-bottom: 1px solid var(--border-color);
         padding-right: 0;
         padding-bottom: 1rem;
-        overflow-x: auto; /* Allows horizontal swiping */
+        overflow-x: auto;
         white-space: nowrap;
     }
 
@@ -339,7 +472,6 @@ body {
         padding: 1.5rem;
     }
 
-    /* Modals adjustments for small screens */
     .modal-content {
         padding: 1.5rem;
     }

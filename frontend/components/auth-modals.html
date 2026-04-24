@@ -14,11 +14,11 @@ Usage: Injected dynamically by FastAPI into the div id="auth-modals-placeholder"
         
         <form id="login-form">
             <div class="input-group">
-                <input type="text" id="login-user" placeholder="Username" required>
+                <input type="text" id="login-user" placeholder="Username" autocomplete="username" required>
             </div>
             
             <div class="input-group">
-                <input type="password" id="login-pass" placeholder="Password" required>
+                <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password" required>
             </div>
             
             <div id="login-error" class="error-text hidden"></div>

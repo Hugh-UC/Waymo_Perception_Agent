@@ -5,6 +5,7 @@
 :root {
     --bg-color: #f4f7f6;
     --surface-color: #ffffff;
+    --surface-inset: #f8f9fa; /* Slightly darker than white to look recessed */
     --surface-hover: #f0f0f0;
     --text-primary: #1a1a1a;
     --text-secondary: #5a5a5a;
@@ -12,8 +13,8 @@
     --accent-hover: #0052a3;
     --border-color: #e0e0e0;
     --error-color: #cc0000;
-    --success-bg: #e8f5e9;
-    --success-text: #2e7d32;
+    --success-bg: #3dad42;
+    --success-text: #ffffff;
     --error-bg: #ffebee;
 }
 
@@ -21,6 +22,7 @@
     :root {
         --bg-color: #121212;
         --surface-color: #1e1e1e;
+        --surface-inset: #151515; /* Slightly darker than the #1e1e1e surface */
         --surface-hover: #2d2d2d;
         --text-primary: #e0e0e0;
         --text-secondary: #a0a0a0;
@@ -28,8 +30,8 @@
         --accent-hover: #66b2ff;
         --border-color: #333333;
         --error-color: #ff4d4d;
-        --success-bg: #1b5e20;
-        --success-text: #a5d6a7;
+        --success-bg: #2f8933;
+        --success-text: #d1d1d1;
         --error-bg: #b71c1c;
     }
 }
