@@ -1,5 +1,5 @@
 """
-File: dash.py
+File: export.py
 Title: Data Export & Visualization
 Description: Queries the SQLite database to generate raw CSV exports and native SVG visualizations.
 Author: Hugh Brennan
@@ -10,6 +10,7 @@ import os
 import csv
 import sqlite3
 from typing import Any
+from datetime import datetime, timezone, timedelta
 
 DB_PATH : str = os.path.join("data", "waymo_metrics.db")
 
@@ -17,6 +18,7 @@ def export_data_and_graphs() -> None:
     """
     Extracts DB records to CSV and generates a native SVG sentiment graph.
     Assumes the export directories have already been verified by the system checker.
+    Hardcoded to the last 60 days to ensure SVG rendering performance. ~~ FUTURE UPDATE: Dynamic limits set via admin (ONLY) settings ~~
 
     Returns:
         None
@@ -28,9 +30,17 @@ def export_data_and_graphs() -> None:
     conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor : sqlite3.Cursor = conn.cursor()
+
+    # calculate the 60-day cutoff date ~~ FUTURE UPDATE ~~
+    cutoff_date : str = (datetime.now(timezone.utc) - timedelta(days=60)).strftime('%Y-%m-%d')
     
-    # 1. export raw data to CSV
-    cursor.execute("SELECT * FROM perception_metrics ORDER BY scrape_date ASC")
+    # 1. export raw data to CSV (60-day limit)
+    cursor.execute('''
+        SELECT * FROM perception_metrics 
+        WHERE scrape_date >= ? 
+        ORDER BY scrape_date ASC
+    ''', (cutoff_date,))
+
     rows : list[sqlite3.Row] = cursor.fetchall()
     
     if not rows:
@@ -40,7 +50,7 @@ def export_data_and_graphs() -> None:
     csv_path : str = os.path.join("exports", "csv", "raw_perception_data.csv")
     with open(csv_path, 'w', newline='', encoding='utf-8') as f:
         writer : Any = csv.writer(f)
-        writer.writerow(rows[0].keys()) # Write headers
+        writer.writerow(rows[0].keys())
         for row in rows:
             writer.writerow(row)
             

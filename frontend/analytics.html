@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waymo Agent | Data & Analytics</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div id="app-container">
+        <nav class="top-nav">
+            <div class="nav-brand fw-bold">Waymo Agent v0.1</div>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/analytics.html" class="active">Analytics</a>
+                <a href="/settings.html">Settings</a>
+                <a href="/export.html">Export</a>
+            </div>
+            <div class="theme-toggle d-flex align-center gap-05">
+                <button id="btn-theme-toggle" class="btn-nav">🌗 Theme</button>
+                <button id="btn-logout" class="btn-nav hidden">Log Out</button>
+            </div>
+        </nav>
+
+        <main class="dashboard-grid">
+            <header class="dashboard-header d-flex flex-between align-center mb-2">
+                <div>
+                    <h1 class="mt-0 mb-05">Data & Intelligence</h1>
+                    <p class="text-muted mt-0 mb-0">Interactive sentiment trends and AI-synthesised narratives.</p>
+                </div>
+            </header>
+
+            <div class="settings-layout">
+                
+                <aside class="settings-sidebar">
+                    <button type="button" class="sidebar-btn active" data-target="panel-overview">Overview Trends</button>
+                    <button type="button" class="sidebar-btn" data-target="panel-platforms">Platform Breakdown</button>
+                    <hr class="section-divider">
+                    <button type="button" class="sidebar-btn" data-target="panel-narratives">Trending Narratives</button>
+                </aside>
+
+                <div class="settings-content">
+                    
+                    <div id="panel-overview" class="settings-section">
+                        <div class="d-flex flex-between align-center mb-15">
+                            <h2 class="mt-0 mb-0" style="border: none;">Macro Sentiment Timeline</h2>
+                            
+                            <div class="d-flex gap-05">
+                                <select id="graph-time-filter" class="text-sm" style="padding: 0.25rem 0.5rem;">
+                                    <option value="7">Last 7 Days</option>
+                                    <option value="30" selected>Last 30 Days</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                                <select id="graph-type-filter" class="text-sm" style="padding: 0.25rem 0.5rem;">
+                                    <option value="line" selected>Line Chart</option>
+                                    <option value="bar">Bar Chart</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-1 mb-15" style="flex-wrap: wrap;">
+                            <label class="d-flex align-center gap-05 text-sm fw-600"><input type="checkbox" class="source-toggle" value="news" checked> News Media</label>
+                            <label class="d-flex align-center gap-05 text-sm fw-600"><input type="checkbox" class="source-toggle" value="reddit" checked> Reddit</label>
+                            <label class="d-flex align-center gap-05 text-sm fw-600 text-muted"><input type="checkbox" class="source-toggle" value="tiktok" disabled> TikTok (Incoming)</label>
+                            <label class="d-flex align-center gap-05 text-sm fw-600 text-muted"><input type="checkbox" class="source-toggle" value="instagram" disabled> Instagram (Incoming)</label>
+                        </div>
+
+                        <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
+                            <canvas id="overviewChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div id="panel-platforms" class="settings-section hidden">
+                        <h2 class="mt-0">Platform Weighting Analysis</h2>
+                        <p class="text-muted">Analyse how individuality and engagement relatability skew sentiment across different networks.</p>
+                        
+                        <div class="alert alert-critical mt-2" style="background: transparent; border-color: var(--border-color); color: var(--text-secondary);">
+                            <h3 class="mt-0">Module Offline</h3>
+                            <p class="mb-0">Waiting for TikTok/Instagram scraper integration and Engagement Weighting algorithms (Phase 2).</p>
+                        </div>
+                    </div>
+
+                    <div id="panel-narratives" class="settings-section hidden">
+                        <h2 class="mt-0">Trending Narratives</h2>
+                        <p class="text-muted mb-2">AI-synthesised macro trends automatically identified from isolated posts and articles.</p>
+                        
+                        <div id="narratives-container">
+                            <div class="stat-card mb-15" style="border-left: 4px solid var(--error-color);">
+                                <div class="d-flex flex-between align-center mb-1">
+                                    <h3 class="mt-0 mb-0">Waymo Sued Over Crowd Incident</h3>
+                                    <span class="badge" style="background: var(--error-bg); color: var(--error-color);">Negative Trend</span>
+                                </div>
+                                <p class="text-sm mt-0 mb-05"><strong>Location:</strong> San Francisco, CA</p>
+                                <p class="text-sm mt-0 mb-1"><strong>Synopsis:</strong> Multiple platforms are reporting on a lawsuit filed after a Waymo vehicle allegedly navigated unsafely near a crowd. Social media sentiment is heavily critical regarding pedestrian safety algorithms.</p>
+                                <p class="text-sm mt-0 mb-0 text-muted"><strong>Future Impact:</strong> Potential regulatory review and immediate PR pushback required regarding V2.0 routing software.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/analytics.js"></script>
+</body>
+</html>
