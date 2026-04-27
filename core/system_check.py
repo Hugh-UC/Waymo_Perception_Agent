@@ -109,7 +109,7 @@ def verify_system_integrity() -> bool:
         os.path.join("frontend", "js", "auth.js"),
         os.path.join("frontend", "js", "datalist.js"),
         os.path.join("frontend", "js", "settings.js"),
-        os.path.join("frontend", "js", "charts.js"),
+        os.path.join("frontend", "js", "analytics.js"),
         os.path.join("frontend", "components", "auth-modals.html"),
         os.path.join("frontend", "components", "setup.html")
     ]
