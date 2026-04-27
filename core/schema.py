@@ -47,6 +47,20 @@ class PerceptionMetrics(BaseModel):
         description="If the person actually rode in a Waymo, rate their satisfaction 1-10. Null if they are just a bystander."
     )
 
+    # narative metrics
+    platform : str = Field(
+        default="unknown",
+        description="The social media or news platform the post originated from (e.g., 'reddit', 'tiktok', 'news')."
+    )
+    relatability_score : float = Field(
+        default=0.0,
+        description="Calculated engagement metric (0.0 to 1.0)."
+    )
+    individuality_score : float = Field(
+        default=0.0,
+        description="Calculated poster uniqueness metric (0.0 to 1.0)."
+    )
+
 class ScrapeBatch(BaseModel):
     """
     The final output for a daily run, containing a list of individual perception metrics.
@@ -59,3 +73,40 @@ class ScrapeBatch(BaseModel):
     run_date : date
     total_sources_analyzed : int
     metrics : list[PerceptionMetrics]
+
+
+class TrendingNarrative(BaseModel):
+    """
+    Schema representing a single macro-narrative synthesized from multiple isolated posts.
+
+    Args:
+        BaseModel (BaseModel): Pydantic foundation class used to facilitate 
+                               serialization of multiple media sources into a 
+                               single, structured database entry.
+    """
+    title: str = Field(
+        description="Headline of the Trend"
+    )
+    location: str = Field(
+        description="City, State (or 'Global')"
+    )
+    synopsis: str = Field(
+        description="A 2-sentence summary of what happened and the public's reaction."
+    )
+    future_impact: str = Field(
+        description="Potential regulatory, PR, or technical consequences."
+    )
+    sentiment_label: Literal["Positive", "Negative", "Neutral", "Mixed"] = Field(
+        description="Overall sentiment trend of this specific narrative."
+    )
+    first_seen_date: str = Field(
+        description="The YYYY-MM-DD date of the earliest post involved in this trend."
+    )
+
+class NarrativeBatch(BaseModel):
+    """
+    Container for a batch of trending narratives, enforcing list structure.
+    """
+    narratives: list[TrendingNarrative] = Field(
+        description="List of synthesized trending narratives."
+    )

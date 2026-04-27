@@ -14,6 +14,10 @@ import time
 import requests
 from typing import List
 
+# Package Imports
+from tools.db import check_metrics_setup, repair_metrics_tables
+from tools.auth_db import check_auth_setup, repair_auth_tables
+
 # The raw content URL for your GitHub repository. 
 # MUST END WITH A FORWARD SLASH. Update 'main' if your branch name is different.
 GITHUB_RAW_BASE_URL : str = "https://raw.githubusercontent.com/Hugh-UC/Waymo_Perception_Agent/main/"
@@ -77,8 +81,10 @@ def verify_system_integrity() -> bool:
     # 2. comprehensive map of the project's source code
     critical_files : List[str] = [
         "main.py",
+        "requirements.txt",
         os.path.join("server", "app.py"),
         os.path.join("config", "models.base.json"),
+        os.path.join("config", "roles.json"),
         os.path.join("config", "params.yaml"),
         os.path.join("core", "__init__.py"),
         os.path.join("core", "schema.py"),
@@ -88,10 +94,11 @@ def verify_system_integrity() -> bool:
         os.path.join("tools", "__init__.py"),
         os.path.join("tools", "scraper.py"),
         os.path.join("tools", "db.py"),
+        os.path.join("tools", "auth_db.py"),
+        os.path.join("tools", "export.py"),
         os.path.join("visualization", "__init__.py"),
-        os.path.join("visualization", "dash.py"),
         os.path.join("frontend", "index.html"),
-        os.path.join("frontend", "graphs.html"),
+        os.path.join("frontend", "analytics.html"),
         os.path.join("frontend", "settings.html"),
         os.path.join("frontend", "prompt.html"),
         os.path.join("frontend", "export.html"),
@@ -115,6 +122,17 @@ def verify_system_integrity() -> bool:
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
                 print(f"  -> Generated missing directory: {directory}/")
+
+        # 2: auto-heal SQLite Databases
+        # auth database is corrupted or missing tables
+        if os.path.exists("data/users.db") and not check_auth_setup():
+            print("  -> Repairing anomalous Authentication database...")
+            repair_auth_tables()
+
+        # metrics database missing tables
+        if not check_metrics_setup():
+            print("  -> Repairing anomalous Metrics database...")
+            repair_metrics_tables()
                 
         # 2: detect missing source code
         missing_files : List[str] = [f for f in critical_files if not os.path.exists(f)]

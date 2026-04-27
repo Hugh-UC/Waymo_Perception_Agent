@@ -60,6 +60,51 @@ def init_user_db() -> None:
     conn.commit()
     conn.close()
 
+def check_auth_setup() -> bool:
+    """
+    Checks if the user database exists and contains at least one registered administrator.
+    Used by the FastAPI server to dictate Setup Wizard routing without exposing SQL logic.
+
+    Returns:
+        bool: True if database is healthy and has users, False otherwise.
+    """
+    if not os.path.exists(DB_PATH):
+        return False
+        
+    try:
+        conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
+        cursor : sqlite3.Cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM users")
+
+        count : int = cursor.fetchone()[0]
+
+        conn.close()
+        return count > 0
+    
+    except sqlite3.OperationalError:
+        return False
+    
+    except Exception as e:
+        print(f"[Auth DB Error] Status check failed: {e}")
+        return False
+
+def repair_auth_tables() -> bool:
+    """
+    Attempts to auto-heal missing authentication tables. Designed to be called 
+    by system_check.py if structural database anomalies are detected.
+
+    Returns:
+        bool: True if repair executes successfully, False otherwise.
+    """
+    try:
+        init_user_db()
+        return True
+    
+    except Exception as e:
+        print(f"[Auth DB Error] Repair failed: {e}")
+        return False
+
 def create_user(username: str, email: str, password: str, role: str, job_title: str = "") -> bool:
     """
     Registers a new user in the database.

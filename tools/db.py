@@ -9,7 +9,7 @@ Version: 0.1
 import os
 import sqlite3
 from typing import Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 # Package Imports
 from core.schema import ScrapeBatch
 
@@ -60,13 +60,84 @@ def init_db() -> None:
             safety_score REAL,
             tech_optimism REAL,
             friction_point TEXT,
-            utility_score REAL
+            utility_score REAL,
+            platform TEXT DEFAULT 'unknown',
+            relatability_score REAL DEFAULT 0.0,
+            individuality_score REAL DEFAULT 0.0
+        )
+    ''')
+
+    # table 4: trending naratives
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS trending_narratives (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            location TEXT,
+            synopsis TEXT NOT NULL,
+            future_impact TEXT,
+            sentiment_label TEXT,
+            first_seen_date TEXT NOT NULL
         )
     ''')
     
     # update database and close connection
     conn.commit()
     conn.close()
+
+
+def check_metrics_setup() -> bool:
+    """
+    Verifies that the metrics database file exists and contains all required tables.
+
+    Returns:
+        bool: True if the database is fully initialized and healthy, False otherwise.
+    """
+    if not os.path.exists(DB_PATH):
+        return False
+        
+    try:
+        conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
+        cursor : sqlite3.Cursor = conn.cursor()
+
+        # query SQLite's internal master table to list all existing tables
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables : set[str] = {row[0] for row in cursor.fetchall()}
+        conn.close()
+
+        # define exact tables system requires to function
+        required_tables : set[str] = {
+            "daily_overview", 
+            "scraper_runs", 
+            "perception_metrics", 
+            "trending_narratives"
+        }
+
+        # all required tables are present in the database
+        return required_tables.issubset(tables)
+    
+    except sqlite3.OperationalError:
+        return False
+    
+    except Exception as e:
+        print(f"[Metrics DB Error] Status check failed: {e}")
+        return False
+
+
+def repair_metrics_tables() -> bool:
+    """
+    Attempts to auto-heal missing metrics tables by re-running the initialization schema.
+
+    Returns:
+        bool: True if repair executes successfully, False otherwise.
+    """
+    try:
+        init_db()
+        return True
+    
+    except Exception as e:
+        print(f"[Metrics DB Error] Repair failed: {e}")
+        return False
+
 
 
 def save_metrics(batch: ScrapeBatch) -> bool:
@@ -111,8 +182,8 @@ def save_metrics(batch: ScrapeBatch) -> bool:
         for metric in batch.metrics:
             cursor.execute('''
                 INSERT INTO perception_metrics 
-                (run_date, scrape_date, source_type, location, sentiment_polarity, safety_score, tech_optimism, friction_point, utility_score)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (run_date, scrape_date, source_type, location, sentiment_polarity, safety_score, tech_optimism, friction_point, utility_score, platform, relatability_score, individuality_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 run_date_str,
                 metric.scrape_date.isoformat(),
@@ -122,7 +193,10 @@ def save_metrics(batch: ScrapeBatch) -> bool:
                 metric.safety_perception_score,
                 metric.technological_optimism,
                 metric.primary_friction_point,
-                metric.utility_score
+                metric.utility_score,
+                metric.platform,
+                metric.relatability_score,
+                metric.individuality_score
             ))
         
         # update database and close connection
@@ -134,6 +208,146 @@ def save_metrics(batch: ScrapeBatch) -> bool:
     except Exception as e:
         print(f"[DB ERROR] Failed to save metrics: {e}")
         return False
+
+
+def get_historical_metrics(days_back : int = 7) -> list[dict[str, Any]]:
+    """
+    Retrieves all perception metrics from the last X days to feed to the Narrative Agent.
+
+    Args:
+        days_back (int, optional): number days of history to fetch. default to 7.
+
+    Returns:
+        list[dict[str, Any]]: list of historical metric dictionaries.
+    """
+    try:
+        conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor : sqlite3.Cursor = conn.cursor()
+        
+        cutoff_date : str = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime('%Y-%m-%d')
+        
+        cursor.execute('''
+            SELECT * FROM perception_metrics 
+            WHERE scrape_date >= ?
+            ORDER BY scrape_date ASC
+        ''', (cutoff_date,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"[DB ERROR] Failed to fetch historical metrics: {e}")
+        return []
+
+
+def save_trending_narratives(narratives_batch : dict[str, Any]) -> bool:
+    """
+    Saves the AI-synthesized trending narratives into the database.
+    Ignores exact duplicates to prevent database bloating.
+
+    Args:
+        narratives_batch (dict[str, Any]): validated JSON dictionary from Narrative Agent.
+
+    Returns:
+        bool: True if successful, False otherwise.
+    """
+    try:
+        conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
+        cursor : sqlite3.Cursor = conn.cursor()
+        
+        narratives : list[dict[str, Any]] = narratives_batch.get("narratives", [])
+        
+        for n in narratives:
+            cursor.execute('SELECT id FROM trending_narratives WHERE title = ? AND first_seen_date = ?', 
+                           (n['title'], n['first_seen_date']))
+            if cursor.fetchone():
+                continue
+                
+            cursor.execute('''
+                INSERT INTO trending_narratives 
+                (title, location, synopsis, future_impact, sentiment_label, first_seen_date)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                n['title'], n['location'], n['synopsis'], 
+                n['future_impact'], n['sentiment_label'], n['first_seen_date']
+            ))
+            
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"[DB ERROR] Failed to save trending narratives: {e}")
+        return False
+
+
+def get_narratives(start : str | None = None, end : str | None = None) -> list[dict[str, Any]]:
+    """
+    Retrieves AI-synthesized narratives, dynamically filtered by chronological parameters.
+
+    Args:
+        start (str | None, optional): start date string (YYYY-MM-DD). Defaults to None.
+        end (str | None, optional): end date string (YYYY-MM-DD). Defaults to None.
+
+    Returns:
+        list[dict[str, Any]]: list of narrative records.
+    """
+    try:
+        if not os.path.exists(DB_PATH):
+            return []
+
+        conn : sqlite3.Connection = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor : sqlite3.Cursor = conn.cursor()
+
+        query : str = "SELECT * FROM trending_narratives WHERE 1=1"
+        params : list[str] = []
+
+        if start:
+            query += " AND first_seen_date >= ?"
+            params.append(start)
+        if end:
+            query += " AND first_seen_date <= ?"
+            params.append(end)
+
+        query += " ORDER BY first_seen_date DESC"
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"[DB ERROR] Failed to fetch narratives: {e}")
+        return []
+
+
+def get_dashboard_totals() -> dict[str, int]:
+    """
+    Queries the SQLite database to fetch the all-time totals for the dashboard.
+
+    Returns:
+        dict[str, int]: dictionary containing 'total_runs' and 'total_sources'.
+    """
+    if not os.path.exists(DB_PATH):
+        return {"total_runs": 0, "total_sources": 0}
+        
+    try:
+        conn : sqlite3.Connection   = sqlite3.connect(DB_PATH)
+        cursor : sqlite3.Cursor     = conn.cursor()
+        
+        cursor.execute("SELECT SUM(run_count), SUM(source_total) FROM daily_overview")
+        row = cursor.fetchone()
+        conn.close()
+        
+        return {
+            "total_runs": row[0] if row[0] else 0,
+            "total_sources": row[1] if row[1] else 0
+        }
+    except Exception as e:
+        print(f"[DB ERROR] Failed to fetch dashboard totals: {e}")
+        return {"total_runs": 0, "total_sources": 0}
+
 
 
 # A quick test block to ensure the tables generate correctly
