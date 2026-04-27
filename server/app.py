@@ -11,9 +11,7 @@ import sys
 import yaml
 import json
 import shutil
-import hashlib
 import re
-import sqlite3
 from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -33,11 +31,12 @@ PARAMS_PATH : str           = os.path.join(BASE_DIR, "config", "params.yaml")
 PREFS_JSON_PATH : str       = os.path.join(BASE_DIR, "config", "settings.json")
 MODELS_DEFAULT_PATH : str   = os.path.join(BASE_DIR, "config", "models.base.json")
 MODELS_PATH : str           = os.path.join(BASE_DIR, "config", "models.json")
-
-from main import run_pipeline
-from tools.auth_db import create_user, verify_user, init_user_db, get_all_users, delete_user
-
 USER_DB_PATH : str          = os.path.join(BASE_DIR, "data", "users.db")
+
+# Package Imports
+from tools.db import get_dashboard_totals, get_narratives, check_metrics_setup
+from tools.auth_db import create_user, verify_user, check_auth_setup, get_all_users, delete_user
+from main import run_pipeline
 
 # ---------------------------------------------------------
 # Pydantic Schemas for API Payloads
@@ -95,32 +94,15 @@ async def get_system_status() -> dict[str, Any]:
         dict[str, Any]: highly detailed dictionary containing boolean flags for missing 
                         components, masked string values, and the current YAML config.
     """
-    env_exists : bool  = os.path.exists(ENV_PATH)
-    
-    # check SQLite user DB exists and has at least one admin
-    auth_exists : bool = False
-    if os.path.exists(USER_DB_PATH):
-        try:
-            conn : sqlite3.Connection = sqlite3.connect(USER_DB_PATH)
-            cursor : sqlite3.Cursor = conn.cursor()
-
-            cursor.execute("SELECT COUNT(*) FROM users")
-
-            if cursor.fetchone()[0] > 0:
-                auth_exists = True
-
-        except sqlite3.OperationalError as e:
-            # silently handle expected first-boot error, log everything else
-            if "no such table" not in str(e).lower():
-                print(f"[System Warning] Database check failed: {e}")
-        finally:
-            # guarantee connection closes even if exception is raised
-            conn.close()
+    env_exists : bool       = os.path.exists(ENV_PATH)
+    auth_exists : bool      = check_auth_setup()
+    metrics_exists : bool   = check_metrics_setup()
     
     # component flags
-    missing_env : bool    = not env_exists
-    missing_auth : bool   = not auth_exists
-    missing_config : bool = not os.path.exists(PARAMS_PATH)
+    missing_env : bool      = not env_exists
+    missing_auth : bool     = not auth_exists
+    missing_metrics : bool  = not metrics_exists
+    missing_config : bool   = not os.path.exists(PARAMS_PATH)
     
     # extracted data
     masked_gemini : str | None = None
@@ -163,6 +145,7 @@ async def get_system_status() -> dict[str, Any]:
         "missing_env": missing_env,
         "missing_config": missing_config,
         "missing_auth": missing_auth,
+        "missing_metrics": missing_metrics,
         "masked_gemini": masked_gemini,
         "masked_news": masked_news,
         "config": config_data
@@ -256,7 +239,7 @@ async def login_api(user : UserAccount) -> dict[str, bool]:
     user_data = verify_user(user.username, user.password)
     
     if user_data:
-        # Return their role so the frontend knows what UI elements to unlock
+        # Rrturn role so frontend knows what UI elements to unlock
         return {"authenticated": True, "role": user_data["role"]}
     
     return {"authenticated": False}
@@ -282,6 +265,13 @@ async def factory_reset_system() -> dict[str, str]:
         # 2. delete database
         db_path : str = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
         if os.path.exists(db_path): os.remove(db_path)
+
+        # 3. reset available models data
+        if os.path.exists(MODELS_PATH): 
+            os.remove(MODELS_PATH)
+
+        if os.path.exists(MODELS_DEFAULT_PATH):
+            shutil.copy(MODELS_DEFAULT_PATH, MODELS_PATH)
         
         # 3. restore params.yaml to safe defaults
         default_config = {
@@ -466,7 +456,7 @@ async def get_available_models() -> dict[str, list[str]]:
     custom models for the frontend dropdowns.
 
     Returns:
-        dict[str, list[str]]: A dictionary containing a single 'models' key mapped to a flattened list of available model strings.
+        dict[str, list[str]]: dictionary containing a single 'models' key mapped to a flattened list of available model strings.
     """
     # bullet proof fallback models dictionary
     fallback : dict[str, list[str]] = {"models": ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro", "gemini-2.5-flash"]}
@@ -499,7 +489,6 @@ async def get_available_models() -> dict[str, list[str]]:
 # ---------------------------------------------------------
 # Execution Endpoints
 # ---------------------------------------------------------
-
 @app.post("/api/run-scraper")
 async def trigger_scraper() -> dict[str, str]:
     """
@@ -519,6 +508,31 @@ async def trigger_scraper() -> dict[str, str]:
             raise HTTPException(status_code=500, detail="Pipeline failed during execution. Check terminal logs.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/api/analytics/narratives")
+async def fetch_narratives(start : str | None = None, end : str | None = None) -> dict[str, list[dict[str, Any]]]:
+    """
+    Retrieves AI-synthesized narratives from the database layer, dynamically filtered by chronological parameters.
+
+    Args:
+        start (str | None, optional): start date string (YYYY-MM-DD). Defaults to None.
+        end (str | None, optional): end date string (YYYY-MM-DD). Defaults to None.
+
+    Returns:
+        dict[str, list[dict[str, Any]]]: dictionary containing a list of narrative records.
+    """
+    narratives = get_narratives(start=start, end=end)
+    return {"narratives": narratives}
+
+@app.get("/api/dashboard/summary")
+async def get_dashboard_summary() -> dict[str, int]:
+    """
+    Fetches the all-time totals for the dashboard from the database layer.
+
+    Returns:
+        dict[str, int]: dictionary containing 'total_runs' and 'total_sources'.
+    """
+    return get_dashboard_totals()
 
 
 # ---------------------------------------------------------
@@ -620,39 +634,6 @@ async def custom_500_handler(request: Any, exc: Exception) -> RedirectResponse:
     return RedirectResponse(url=f"/error.html?code=500&detail={error_detail}", status_code=302)
 
 
-@app.get("/api/dashboard/summary")
-async def get_dashboard_summary() -> dict[str, int]:
-    """
-    Queries the SQLite database to fetch the all-time totals for the dashboard.
-
-    Raises:
-        HTTPException: if there is an error connecting to or reading from the database.
-
-    Returns:
-        dict[str, int]: dictionary containing 'total_runs' and 'total_sources'.
-    """
-    db_path : str = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
-    
-    # return zeros, if daatabase doesnt exists
-    if not os.path.exists(db_path):
-        return {"total_runs": 0, "total_sources": 0}
-        
-    try:
-        # create connection to database
-        conn : sqlite3.Connection   = sqlite3.connect(db_path)
-        cursor : sqlite3.Cursor     = conn.cursor()
-        
-        # sum counts from daily overview table
-        cursor.execute("SELECT SUM(run_count), SUM(source_total) FROM daily_overview")
-        row = cursor.fetchone()
-        conn.close()
-        
-        return {
-            "total_runs": row[0] if row[0] else 0,
-            "total_sources": row[1] if row[1] else 0
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database read error: {str(e)}")
 
 # mount frontend directory to serve CSS and JS assets
 app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="frontend")

@@ -24,6 +24,7 @@ NEWS_API_KEY : str | None = os.getenv("NEWS_API_KEY")
 with open("config/params.yaml", "r") as file:
     config = yaml.safe_load(file)
 
+
 def scrape_waymo_news() -> str:
     """
     Fetches recent news articles mentioning Waymo using NewsAPI.
@@ -88,7 +89,8 @@ def scrape_waymo_news() -> str:
         print(f"Error fetching news: {e}")
         return ""
 
-def scrape_reddit_sentiment(subreddit: list[str] | None = None) -> str:
+
+def scrape_reddit_sentiment(subreddit : list[str] | None = None) -> str:
     """
     Fetches recent posts and comments from Reddit.
     Subreddit parameter is pulled from config.yaml.
@@ -131,6 +133,78 @@ def scrape_reddit_sentiment(subreddit: list[str] | None = None) -> str:
             compiled_data += f"[Error fetching r/{sub}: {e}]\n\n"
             
     return compiled_data
+
+
+def scrape_video_platforms(query : str, days_back : int) -> list[dict]:
+    """
+    Pipeline ready to receive TikTok/IG Playwright or API JSON.
+
+    Args:
+        query (str): _description_
+        days_back (int): _description_
+
+    Returns:
+        list[dict]: _description_
+    """
+    scraped_reels = []
+    # --- FUTURE API CALL GOES HERE ---
+    
+    # Example structured output the AI expects:
+    mock_reel = {
+        "platform": "tiktok",
+        "content_text": "Self driving car just stopped in the middle of the intersection!",
+        "relatability_score": calculate_relatability(views=10000, likes=1200, comments=45, shares=200),
+        "individuality_score": calculate_individuality(account_total_posts=300, waymo_specific_posts=2),
+        "timestamp": "2026-04-26T14:30:00Z"
+    }
+    scraped_reels.append(mock_reel)
+    return scraped_reels
+
+
+def calculate_relatability(views : int, likes : int, comments : int, shares : int) -> float:
+    """
+    Calculates Relatability based on industry-standard engagement weighting.
+    Shares (High Intent) > Comments (Medium Intent) > Likes (Low Intent).
+    Returns a normalized score between 0.0 and 1.0.
+
+    Args:
+        views (int): _description_
+        likes (int): _description_
+        comments (int): _description_
+        shares (int): _description_
+
+    Returns:
+        float: _description_
+    """
+    if views == 0: return 0.0
+    
+    # weighted engagement formula
+    weighted_engagement : float = (likes * 1) + (comments * 2.5) + (shares * 4)
+    raw_score : float           = weighted_engagement / views
+    
+    # normalize to 0.0 -> 1.0 scale (assuming a 15% engagement rate is 'viral' / 1.0)
+    normalized = min(raw_score / 0.15, 1.0)
+    return round(normalized, 3)
+
+
+def calculate_individuality(account_total_posts : int, waymo_specific_posts : int) -> float:
+    """
+    Calculates Individuality (Is this an organic poster or a dedicated Waymo-spam account?).
+    1.0 = Highly Individual (First time poster). 0.0 = Dedicated Spam/Shitposter.
+
+    Args:
+        account_total_posts (int): total number of posts made by user account.
+        waymo_specific_posts (int): number of posts specifically mentioning Waymo.
+
+    Returns:
+        float: normalized individuality score between 0.0 and 1.0.
+    """
+    if account_total_posts == 0: return 1.0
+    
+    saturation_ratio : float = waymo_specific_posts / account_total_posts
+    individuality : float    = 1.0 - saturation_ratio      # invert the ratio (high saturation = low individuality)
+
+    return round(individuality, 3)
 
  
 if __name__ == "__main__":
