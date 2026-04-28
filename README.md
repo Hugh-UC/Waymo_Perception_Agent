@@ -134,11 +134,11 @@ waymo_perception_agent/
 ### 1. Build Virtual Environment:
 **Windows:**
 ```sh
-python -m venv venv
+python -m venv .venv
 ```
 **Ubuntu/Python3:**
 ```sh
-python3 -m venv venv
+python3 -m venv .venv
 ```
 **Note:** On ubuntu you might need to first run and install venv:
 ```sh
@@ -150,11 +150,11 @@ sudo apt install python3-venv
 ### 2. Source Virtual Environment:
 **Windows:**
 ```sh
-venv\Scripts\activate
+.venv\Scripts\activate
 ```
 **Ubuntu:**
 ```sh
-source venv/bin/activate
+source .venv/bin/activate
 ```
 **Note:** Make sure your virtual environment is activated (you will see (`venv`) in your terminal prompt) before proceeding.
 
@@ -209,7 +209,7 @@ touch requirements.txt
 
 **Windows/Ubuntu:**
 ```sh
-pip install pydantic pydantic-ai langgraph google-genai python-dotenv
+pip install fastapi uvicorn pydantic pydantic-ai google-genai python-dotenv pyyaml requests google-api-python-client duckduckgo-search
 ```
 
 #### Update Requirements Document with new Packages
@@ -241,9 +241,15 @@ Before running the system, generate these free keys:
 Backend uses FastAPI to serve the HTML frontend and handle API logic. 
 
 Ensure virtual environment is active, then start server.
-**Windows/Ubuntu:**
+
+**Windows/Ubuntu:**  
+As script:
 ```sh
 python server/app.py
+```
+As module:
+```sh
+python -m server.app
 ```
 
 Server runs on local loopback. Open web browser and navigate to:  
