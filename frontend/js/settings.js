@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const syncModal = document.getElementById("sync-modal");
     const diffContainer = document.getElementById("diff-container");
 
+    
     // ---------------------------------------------------------
     // 2. Dynamic Custom Model Datalist Manager
     // ---------------------------------------------------------
@@ -113,6 +114,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+
     // ---------------------------------------------------------
     // 3. UI Navigation Logic (Google-Style Sidebar)
     // ---------------------------------------------------------
@@ -127,6 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById(btn.getAttribute("data-target")).classList.remove("hidden");
         });
     });
+
 
     // ---------------------------------------------------------
     // 4. Cookie Utilities
@@ -147,6 +150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         return null;
     }
+
 
     // ---------------------------------------------------------
     // 5. Data Reconciliation Engine
@@ -227,6 +231,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         await updateBackups(actualProjectConfig); 
         showStatus("Browser preferences updated to match project files.", false);
     });
+
 
     // ---------------------------------------------------------
     // 6. UI Rendering & Input Management
@@ -343,6 +348,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         input.value = "";
     });
 
+
     // ---------------------------------------------------------
     // 7. Data Saving & API Submission
     // ---------------------------------------------------------
@@ -423,6 +429,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             statusBox.classList.add("hidden");
         }, 4000);
     }
+
 
     // ---------------------------------------------------------
     // 8. User Management Controller
@@ -512,6 +519,65 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    initializeSettings();
-    loadUserManagement(); // init users tab immediately
+
+    // ---------------------------------------------------------
+    // 9. API Key Management (New Section)
+    // ---------------------------------------------------------
+    async function loadApiKeys() {
+        try {
+            const statusRes = await fetch("/api/status");
+            const status = await statusRes.json();
+            
+            // TEMP: logging api keys to ensure successful retrieval
+            console.log("📥 API Keys loaded from backend:", status);
+
+            if (status.masked_gemini) document.getElementById("env-gemini-key").value = status.masked_gemini;
+            if (status.masked_news) document.getElementById("env-news-key").value = status.masked_news;
+            if (status.masked_yt) document.getElementById('env-yt-key').value = status.masked_yt;
+            if (status.masked_gcs) document.getElementById('env-gcs-key').value = status.masked_gcs;
+            if (status.masked_cx) document.getElementById('env-gcs-cx').value = status.masked_cx;
+        } catch (error) {
+            console.error("Failed to load masked API keys:", error);
+        }
+    }
+
+    document.getElementById("btn-save-apis")?.addEventListener("click", async (e) => {
+        const btn = e.target;
+        btn.textContent = "Saving...";
+        btn.disabled = true;
+
+        const payload = {
+            gemini_key: document.getElementById("env-gemini-key").value.trim(),
+            news_key: document.getElementById("env-news-key").value.trim(),
+            youtube_key: document.getElementById("env-yt-key").value.trim(),
+            gcs_key: document.getElementById("env-gcs-key").value.trim(),
+            gcs_cx: document.getElementById("env-gcs-cx").value.trim()
+        };
+
+        try {
+            const response = await fetch("/api/setup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("Failed to save keys");
+            
+            showStatus("API Keys updated successfully!", false);
+            await loadApiKeys(); // reload masked values
+        } catch (error) {
+            showStatus("Network Error: Could not save API keys.", true);
+        } finally {
+            btn.textContent = "Save Environment Keys";
+            btn.disabled = false;
+        }
+    });
+
+
+    // ---------------------------------------------------------
+    // 10. Master Initialization Sequence
+    // ---------------------------------------------------------
+    initializeSettings();   // Syncs params.yaml & populates Scraper/Agent tabs
+    loadUserManagement();   // Fetches SQLite DB data & populates Users tab
+    loadApiKeys();          // Fetches masked .env keys & populates API Config tab
 });

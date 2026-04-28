@@ -152,6 +152,14 @@ body {
     outline: none;
 }
 
+.input-group input[type="checkbox"] {
+    margin: 0;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--accent-color);
+    cursor: pointer;
+}
+
 .flex-input { 
     display: flex; 
     gap: 0.5rem; 
@@ -478,11 +486,24 @@ body {
 /* Utilities */
 .w-auto { width: auto; }
 .w-100 { width: 100%; }
+
+.mt-05 { margin-top: 0.5rem; }
 .mt-1 { margin-top: 1rem; }
 .mt-15 { margin-top: 1.5rem; }
 .mt-2 { margin-top: 2rem; }
+.mb-05 {margin-bottom: 0.5rem;}
+.mb-1 { margin-bottom: 1rem; }
+.mb-15 { margin-bottom: 1.5rem; }
+.mb-2 { margin-bottom: 2rem; }
+
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.gap-05 { gap: 0.5rem; }
 .text-muted { color: var(--text-muted); }
+
 .text-sm { font-size: 0.8rem; }
+.text-mm { font-size: 1.0rem; }
+.text-bg { font-size: 1.2rem; }
 
 /* Modal & Header Typography/Colors */
 .text-center { text-align: center; }

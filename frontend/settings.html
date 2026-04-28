@@ -50,7 +50,8 @@
                 <aside class="settings-sidebar">
                     <button type="button" class="sidebar-btn active" data-target="section-scraper">Scraper Parameters</button>
                     <button type="button" class="sidebar-btn" data-target="section-agent">Agent Parameters</button>
-                    <hr class="section-divider">
+                    <button type="button" class="sidebar-btn" data-target="section-api">API Keys</button>
+                    <hr class="section-divider" style="margin-top: 0.2 rem; margin-bottom: 0.2 rem;">
                     <button type="button" class="sidebar-btn" data-target="section-users">User Management</button>
                 </aside>
 
@@ -61,22 +62,22 @@
                             <h2 class="mt-0">Scraper Parameters</h2>
                             
                             <div class="input-group mt-15">
-                                <label>News Query</label>
+                                <label for="news-query">News Query</label>
                                 <input type="text" id="news-query" required>
                             </div>
                             <div class="input-group">
-                                <label>Days Back (1 - 7)</label>
+                                <label for="news-days">Days Back (1 - 7)</label>
                                 <input type="number" id="news-days" min="1" max="7" required>
                             </div>
                             <div class="input-group">
-                                <label>Max Articles (5 - 30)</label>
+                                <label for="news-max">Max Articles (5 - 30)</label>
                                 <input type="number" id="news-max" min="5" max="30" required>
                             </div>
 
                             <hr class="section-divider">
 
                             <div class="input-group">
-                                <label>Reddit Communities (Max 16)</label>
+                                <label for="new-subreddit">Reddit Communities (Max 16)</label>
                                 <div class="help-text">Must be 3-21 characters, no spaces.</div>
                                 <div class="flex-input">
                                     <input type="text" id="new-subreddit" placeholder="Add subreddit...">
@@ -86,7 +87,7 @@
                                 <div id="sub-error" class="error-text text-sm hidden mt-05"></div>
                             </div>
                             <div class="input-group">
-                                <label>Max Reddit Posts (5 - 15)</label>
+                                <label for="reddit-max">Max Reddit Posts (5 - 15)</label>
                                 <input type="number" id="reddit-max" min="5" max="15" required>
                             </div>
                             
@@ -97,7 +98,7 @@
                             <h2 class="mt-0">Agent Parameters</h2>
                             
                             <div class="input-group mt-15">
-                                <label>Primary Model</label>
+                                <label for="agent-model">Primary Model</label>
                                 <div class="custom-datalist-wrapper">
                                     <input type="text" id="agent-model" autocomplete="off" placeholder="Select or type model..." required>
                                     <ul id="settings-primary-list" class="custom-options-list hidden"></ul>
@@ -106,7 +107,7 @@
                             </div>
                             
                             <div class="input-group mt-1">
-                                <label>Fallback Models (Priority Order)</label>
+                                <label for="new-fallback-model">Fallback Models (Priority Order)</label>
                                 <div class="help-text">Add models to serve as backups during rate limits.</div>
                                 <div class="flex-input custom-datalist-wrapper">
                                     <input type="text" id="new-fallback-model" autocomplete="off" placeholder="Add fallback model...">
@@ -120,20 +121,54 @@
                             <hr class="section-divider">
                             
                             <div class="input-group">
-                                <label>Temperature (0.0 - 1.0)</label>
+                                <label for="agent-temp">Temperature (0.0 - 1.0)</label>
                                 <div class="help-text">Lower values enforce stricter JSON schema adherence.</div>
                                 <input type="number" id="agent-temp" step="0.1" min="0" max="1" required>
                             </div>
                             <div class="input-group">
-                                <label>API Retries (1 - 5)</label>
+                                <label for="agent-retries">API Retries (1 - 5)</label>
                                 <input type="number" id="agent-retries" min="1" max="5" required>
                             </div>
                             <div class="input-group">
-                                <label>JSON Output Retries (1 - 10)</label>
+                                <label for="agent-out-retries">JSON Output Retries (1 - 10)</label>
                                 <input type="number" id="agent-out-retries" min="1" max="10" required>
                             </div>
                             
                             <button type="submit" class="btn-primary w-100 mt-2">Save & Synchronise Configuration</button>
+                        </div>
+
+                        <div id="section-api" class="settings-section hidden">
+                            <h2 class="mt-0">API Configuration</h2>
+                            <p class="text-muted mb-15">Update your system environment keys. Keys are masked for security.</p>
+                            
+                            <div class="input-group">
+                                <label for="env-gemini-key">Gemini API Key</label>
+                                <input type="text" id="env-gemini-key" class="form-control" placeholder="*************">
+                            </div>
+                            <div class="input-group mt-15">
+                                <label for="env-news-key">News API Key</label>
+                                <input type="text" id="env-news-key" class="form-control" placeholder="*************">
+                            </div>
+
+                            <h3 class="mt-2 mb-05 border-bottom pb-05">Social Media APIs (Optional)</h3>
+                            <p class="text-sm text-muted mt-0 mb-15">Clear these fields to force the system to use keyless DuckDuckGo fallbacks.</p>
+
+                            <div class="input-group">
+                                <label for="env-yt-key">YouTube Data API v3 Key</label>
+                                <input type="text" id="env-yt-key" class="form-control" placeholder="Not configured (Using Fallback)">
+                            </div>
+
+                            <div class="input-group mt-15">
+                                <label for="env-gcs-key">Google Custom Search API Key</label>
+                                <input type="text" id="env-gcs-key" class="form-control" placeholder="Not configured (Using Fallback)">
+                            </div>
+
+                            <div class="input-group mt-15">
+                                <label for="env-gcs-cx">Google Custom Search ID (CX)</label>
+                                <input type="text" id="env-gcs-cx" class="form-control" placeholder="Not configured (Using Fallback)">
+                            </div>
+                            
+                            <button type="button" id="btn-save-apis" class="btn-primary w-100 mt-2">Save Environment Keys</button>
                         </div>
 
                     </form>

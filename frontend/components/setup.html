@@ -31,7 +31,7 @@ Usage: Injected dynamically by FastAPI into the <div id="setup-wizard"> containe
             <form id="form-step-1">
                 <div class="input-group">
                     <label for="setup-gemini">Gemini API Key</label>
-                    <input type="text" id="setup-gemini" placeholder="AI Studio Key">
+                    <input type="text" id="setup-gemini" placeholder="AI Studio Key...">
                     <div id="clear-gemini-wrapper" class="clear-key-wrapper hidden">
                         <button type="button" id="btn-clear-gemini" class="btn-clear">Clear saved key</button>
                     </div>
@@ -39,15 +39,57 @@ Usage: Injected dynamically by FastAPI into the <div id="setup-wizard"> containe
                 
                 <div class="input-group">
                     <label for="setup-news">NewsAPI Key</label>
-                    <input type="text" id="setup-news" placeholder="NewsAPI Key">
+                    <input type="text" id="setup-news" placeholder="NewsAPI Key...">
                     <div id="clear-news-wrapper" class="clear-key-wrapper hidden">
                         <button type="button" id="btn-clear-news" class="btn-clear">Clear saved key</button>
                     </div>
                 </div>
                 
+                <hr class="section-divider mt-1 mb-2">
+                <h3 class="mt-0 mb-05">Advanced Integrations (Optional)</h3>
+                <p class="text-sm text-muted mt-0 mb-15">If left blank, the system will gracefully fall back to free DuckDuckGo searches for social media.</p>
+
+                <div class="input-group mb-1">
+                    <label class="d-flex align-center gap-05" style="cursor: pointer;">
+                        <input type="checkbox" id="toggle-yt" onchange="document.getElementById('yt-fields').classList.toggle('hidden', !this.checked)">
+                        <strong>Enable Official YouTube Data API</strong>
+                    </label>
+                </div>
+                <div id="yt-fields" class="hidden mb-15" style="padding-left: 1.5rem; border-left: 2px solid var(--border-color);">
+                    <div class="input-group">
+                        <label for="setup-yt-key" class="text-mm">YouTube API v3 Key</label>
+                        <input type="text" id="setup-yt-key" class="form-control" placeholder="Enter new key...">
+                        <div id="clear-yt-wrapper" class="clear-key-wrapper hidden">
+                            <button type="button" id="btn-clear-yt" class="btn-clear">Clear saved key</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group mb-1">
+                    <label class="d-flex align-center gap-05" style="cursor: pointer;">
+                        <input type="checkbox" id="toggle-gcs" onchange="document.getElementById('gcs-fields').classList.toggle('hidden', !this.checked)">
+                        <strong>Enable Google Custom Search (For TikTok/IG)</strong>
+                    </label>
+                </div>
+                <div id="gcs-fields" class="hidden mb-15" style="padding-left: 1.5rem; border-left: 2px solid var(--border-color);">
+                    <div class="input-group">
+                        <label for="setup-gcs-key" class="text-mm">GCS API Key</label>
+                        <input type="text" id="setup-gcs-key" class="form-control" placeholder="Enter new key...">
+                        <div id="clear-gcs-wrapper" class="clear-key-wrapper hidden">
+                            <button type="button" id="btn-clear-gcs" class="btn-clear">Clear saved key</button>
+                        </div>
+                    </div>
+                    <div class="input-group mt-1">
+                        <label for="setup-gcs-cx" class="text-mm">Search Engine ID (CX)</label>
+                        <input type="text" id="setup-gcs-cx" class="form-control" placeholder="Enter new ID key...">
+                        <div id="clear-gcs-cx-wrapper" class="clear-key-wrapper hidden">
+                            <button type="button" id="btn-clear-gcs-cx" class="btn-clear">Clear saved key</button>
+                        </div>
+                    </div>
+                </div>
                 <div id="setup-error" class="error-text hidden"></div>
                 
-                <button type="submit" class="btn-primary btn-block">Save Keys & Continue</button>
+                <button type="submit" class="btn-primary btn-block mt-1">Save Keys & Continue</button>
             </form>
         </div>
 

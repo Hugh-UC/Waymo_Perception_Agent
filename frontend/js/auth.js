@@ -119,6 +119,25 @@ const AuthManager = {
             this.setupMaskedInput("setup-news", "clear-news-wrapper", "btn-clear-news", status.masked_news);
         }
 
+        // load the optional keys into the wizard UI if they exist!
+        if (status.masked_yt) {
+            console.log(status.masked_yt)
+            document.getElementById("toggle-yt").checked = true;
+            document.getElementById("yt-fields").classList.remove("hidden");
+            document.getElementById("setup-yt-key").value = status.masked_yt;
+            this.setupMaskedInput("setup-yt-key", "clear-yt-wrapper", "btn-clear-yt", status.masked_yt);
+        }
+        if (status.masked_gcs) {
+            document.getElementById("toggle-gcs").checked = true;
+            document.getElementById("gcs-fields").classList.remove("hidden");
+            document.getElementById("setup-gcs-key").value = status.masked_gcs;
+            this.setupMaskedInput("setup-gcs-key", "clear-gcs-wrapper", "btn-clear-gcs", status.masked_gcs);
+        }
+        if (status.masked_cx) {
+            document.getElementById("setup-gcs-cx").value = status.masked_cx;
+            this.setupMaskedInput("setup-gcs-cx-key", "clear-gcs-cx-wrapper", "btn-clear-gcs-cx", status.masked_cx);
+        }
+
         // 2. prefill YAML configurations
         if (status.config && status.config.agent) {
             const primaryInput = document.getElementById("setup-primary-model");
@@ -232,6 +251,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (newsInput.dataset.isMasked !== "true") {
             payload.news_key = newsInput.value.trim();
         }
+
+        // add optional fields ONLY if their checkboxes are ticked
+        const toggleYt = document.getElementById('toggle-yt');
+        const toggleGcs = document.getElementById('toggle-gcs');
+
+        payload.youtube_key = (toggleYt && toggleYt.checked) ? document.getElementById('setup-yt-key').value.trim() : "";
+        payload.gcs_key = (toggleGcs && toggleGcs.checked) ? document.getElementById('setup-gcs-key').value.trim() : "";
+        payload.gcs_cx = (toggleGcs && toggleGcs.checked) ? document.getElementById('setup-gcs-cx').value.trim() : "";
 
         try {
             // fire the API request, if there is new unmasked data
