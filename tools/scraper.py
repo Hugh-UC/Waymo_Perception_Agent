@@ -1,13 +1,15 @@
 """
 File: scraper.py
 Title: Media Scraper Tool
-Description: Handles the data ingestion pipeline, pulling unstructured text from NewsAPI and Reddit based on YAML configurations.
+Description: Handles the data ingestion pipeline, pulling unstructured text from NewsAPI, Reddit, and other web crawling APIs, based on YAML configurations.
 Author: Hugh Brennan
 Date: 2026-04-22
 Version: 0.1
 """
-
+from googleapiclient.discovery import build
+from duckduckgo_search import DDGS
 import os
+import time
 import yaml
 import requests
 from typing import Any
@@ -18,13 +20,20 @@ from core.utils import get_search_time_str
 
 # load the API keys from '.env' file
 load_dotenv()
-NEWS_API_KEY : str | None = os.getenv("NEWS_API_KEY")
+GEMINI_API_KEY : str | None     = os.getenv("GEMINI_API_KEY")
+NEWS_API_KEY : str | None       = os.getenv("NEWS_API_KEY")
+GCS_API_KEY : str | None        = os.getenv("GCS_API_KEY")
+GCS_CX_ID : str | None          = os.getenv("GCS_CX_ID")
+YOUTUBE_API_KEY : str | None    = os.getenv("YOUTUBE_API_KEY")
 
 # load parameter configuration from 'yaml'
 with open("config/params.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 
+# ---------------------------------------------------------
+# News/Forums Scraping Engine
+# ---------------------------------------------------------
 def scrape_waymo_news() -> str:
     """
     Fetches recent news articles mentioning Waymo using NewsAPI.
@@ -135,31 +144,152 @@ def scrape_reddit_sentiment(subreddit : list[str] | None = None) -> str:
     return compiled_data
 
 
-def scrape_video_platforms(query : str, days_back : int) -> list[dict]:
+# ---------------------------------------------------------
+# Hybrid Social Media Scraping Engine
+# ---------------------------------------------------------
+
+def scrape_social_via_ddg(query : str, platform : str, max_results : int = 5) -> str:
     """
-    Pipeline ready to receive TikTok/IG Playwright or API JSON.
+    Universal keyless fallback scraper using DuckDuckGo.
 
     Args:
-        query (str): _description_
-        days_back (int): _description_
+        query (str): subject to search for.
+        platform (str): target domain to restrict the search to.
+        max_results (int, optional): maximum number of search results to retrieve. defaults to 5.
 
     Returns:
-        list[dict]: _description_
+        str: compiled string of search result titles and snippets.
     """
-    scraped_reels = []
-    # --- FUTURE API CALL GOES HERE ---
+    search_query : str = f"site:{platform} {query}"
+    compiled_data : str = f"--- SCRAPED FROM {platform.upper()} (VIA DDG) ---\n"
     
-    # Example structured output the AI expects:
-    mock_reel = {
-        "platform": "tiktok",
-        "content_text": "Self driving car just stopped in the middle of the intersection!",
-        "relatability_score": calculate_relatability(views=10000, likes=1200, comments=45, shares=200),
-        "individuality_score": calculate_individuality(account_total_posts=300, waymo_specific_posts=2),
-        "timestamp": "2026-04-26T14:30:00Z"
-    }
-    scraped_reels.append(mock_reel)
-    return scraped_reels
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(search_query, max_results=max_results))
+            if not results: return compiled_data + "No results found.\n"
+            
+            for res in results:
+                compiled_data += f"Title: {res.get('title', 'Unknown')}\n"
+                compiled_data += f"Snippet: {res.get('body', 'No description available.')}\n\n"
 
+        return compiled_data
+    
+    except Exception as e:
+        print(f"[DDG Fallback Error] {platform}: {e}")
+        return compiled_data + "Failed to retrieve data.\n"
+
+
+def scrape_social_via_gcs(query : str, platform : str, max_results : int = 5) -> str:
+    """
+    Primary scraper using Google Custom Search API.
+
+    Args:
+        query (str): subject to search for.
+        platform (str): target domain to restrict the search to.
+        max_results (int, optional): maximum number of search results to retrieve. defaults to 5.
+
+    Raises:
+        ValueError: if GCS_API_KEY or GCS_CX_ID is missing from the environment.
+
+    Returns:
+        str: compiled string of search result titles and snippets from the GCS API.
+    """
+    if not GCS_API_KEY or not GCS_CX_ID:
+        raise ValueError("GCS Keys missing.")
+
+    search_query : str = f"site:{platform} {query}"
+    compiled_data : str = f"--- SCRAPED FROM {platform.upper()} (VIA GCS API) ---\n"
+    
+    service = build("customsearch", "v1", developerKey=GCS_API_KEY, cache_discovery=False)
+    res = service.cse().list(q=search_query, cx=GCS_CX_ID, num=max_results).execute()
+    
+    items = res.get('items', [])
+    if not items: return compiled_data + "No results found.\n"
+    
+    for item in items:
+        compiled_data += f"Title: {item.get('title', 'Unknown')}\n"
+        compiled_data += f"Snippet: {item.get('snippet', 'No description available.')}\n\n"
+        
+    return compiled_data
+
+
+def scrape_youtube_api(query : str, max_results : int = 5) -> str:
+    """
+    Primary scraper for YouTube using the official Data API v3.
+
+    Args:
+        query (str): subject to search for on youtube.
+        max_results (int, optional): maximum number of videos to retrieve. defaults to 5.
+
+    Raises:
+        ValueError: if YOUTUBE_API_KEY is missing from the environment variables.
+
+    Returns:
+        str: compiled string of YouTube video titles, statistics, and descriptions.
+    """
+    if not YOUTUBE_API_KEY:
+        raise ValueError("YouTube API Key missing.")
+
+    youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY, cache_discovery=False)
+    compiled_data : str = "--- SCRAPED FROM YOUTUBE (OFFICIAL API) ---\n"
+
+    search_res = youtube.search().list(q=query, part='id,snippet', maxResults=max_results, type='video', order='date').execute()
+    video_ids = [item['id']['videoId'] for item in search_res.get('items', [])]
+    
+    if not video_ids: return compiled_data + "No recent videos found.\n"
+
+    stats_res = youtube.videos().list(part='statistics,snippet', id=','.join(video_ids)).execute()
+
+    for item in stats_res.get('items', []):
+        snip = item['snippet']
+        stat = item.get('statistics', {})
+        compiled_data += f"Title: {snip['title']}\n"
+        compiled_data += f"Views: {stat.get('viewCount', '0')} | Likes: {stat.get('likeCount', '0')}\n"
+        compiled_data += f"Description: {snip['description'][:200]}...\n\n"
+
+    return compiled_data
+
+# --- The Orchestrators ---
+def scrape_social_hybrid(query : str, platform : str, max_results : int = 5) -> str:
+    """
+    Attempts GCS API, gracefully degrades to DDG on failure.
+
+    Args:
+        query (str): subject to search for.
+        platform (str): target domain to restrict the search to.
+        max_results (int, optional): maximum number of search results to retrieve. Defaults to 5.
+
+    Returns:
+        str: compiled data string from either the GCS API or the DDG fallback.
+    """
+    try:
+        return scrape_social_via_gcs(query, platform, max_results)
+    except Exception as e:
+        print(f"    -> [Fallback Triggered] GCS failed for {platform} ({e}). Using DDG...")
+        return scrape_social_via_ddg(query, platform, max_results)
+
+
+def scrape_youtube_hybrid(query: str, max_results: int = 5) -> str:
+    """
+    Attempts Official YT API, gracefully degrades to DDG on failure.
+
+    Args:
+        query (str): subject to search for.
+        max_results (int, optional): maximum number of videos to retrieve. Defaults to 5.
+
+    Returns:
+        str: compiled data string from either the official YouTube API or the DDG fallback.
+    """
+    try:
+        return scrape_youtube_api(query, max_results)
+    except Exception as e:
+        print(f"    -> [Fallback Triggered] YouTube API failed ({e}). Using DDG...")
+        return scrape_social_via_ddg(query, "youtube.com", max_results)
+
+
+# ---------------------------------------------------------
+# Metrics Calculations
+# ---------------------------------------------------------
 
 def calculate_relatability(views : int, likes : int, comments : int, shares : int) -> float:
     """
@@ -168,13 +298,13 @@ def calculate_relatability(views : int, likes : int, comments : int, shares : in
     Returns a normalized score between 0.0 and 1.0.
 
     Args:
-        views (int): _description_
-        likes (int): _description_
-        comments (int): _description_
-        shares (int): _description_
+        views (int): total number of times the video has been viewed.
+        likes (int): total number of likes the video received.
+        comments (int): total number of comments on the video.
+        shares (int): total number of times the video was shared.
 
     Returns:
-        float: _description_
+        float: normalized engagement score between 0.0 and 1.0.
     """
     if views == 0: return 0.0
     

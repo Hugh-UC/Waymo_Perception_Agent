@@ -6,7 +6,6 @@ Author: Hugh Brennan
 Date: 2026-04-22
 Version: 0.1
 """
-
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
 from datetime import date

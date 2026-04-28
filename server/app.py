@@ -47,6 +47,9 @@ class EnvSetup(BaseModel):
     """
     gemini_key : str
     news_key : str
+    youtube_key : str | None = None
+    gcs_key : str | None = None
+    gcs_cx : str | None = None
 
 class YamlUpdate(BaseModel):
     """
@@ -104,30 +107,36 @@ async def get_system_status() -> dict[str, Any]:
     missing_metrics : bool  = not metrics_exists
     missing_config : bool   = not os.path.exists(PARAMS_PATH)
     
-    # extracted data
-    masked_gemini : str | None = None
-    masked_news : str | None = None
-    config_data : dict[str, Any] | None = None
-    
-    # 1. parse .env and mask keys
+    # 1. map .env api key states and create masked versions
+    api_key_mapping : list[str] = {
+        'GEMINI_API_KEY': 'masked_gemini',
+        'NEWS_API_KEY': 'masked_news',
+        'YOUTUBE_API_KEY': 'masked_yt',
+        'GCS_API_KEY': 'masked_gcs',
+        'GCS_CX_ID': 'masked_cx'
+    }
+
+    # initialize all masked variables to None
+    masked_data : dict[str, str | None] = {v: None for v in api_key_mapping.values()}
+
+    # extract and mask
     if env_exists:
         with open(ENV_PATH, "r") as f:
             content : str = f.read()
-            
-            # regex search for keys
-            g_match = re.search(r'GEMINI_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
-            n_match = re.search(r'NEWS_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
-            
-            if g_match and n_match:
-                g_key : str = g_match.group(1).strip()
-                n_key : str = n_match.group(1).strip()
-                
-                if g_key and n_key:
-                    missing_env = False
-                    masked_gemini = "*" * 12 + g_key[-4:] if len(g_key) > 4 else "***"
-                    masked_news = "*" * 12 + n_key[-4:] if len(n_key) > 4 else "***"
+
+            for env_key, mask_key in api_key_mapping.items():
+                # match regex for keys
+                match : re.Match[str] = re.search(fr'{env_key}=["\']?(.*?)["\']?(?:\n|$)', content)
+
+                if match and match.group(1).strip():
+                    val : str = match.group(1).strip()
+                    masked_data[mask_key] = "*" * 12 + val[-4:] if len(val) > 4 else "***"
+
+            # check for required keys, flag environment as missing
+            missing_env : bool = not (masked_data['masked_gemini'] and masked_data['masked_news'])
 
     # 2. parse params.yaml
+    config_data : dict[str, Any] | None = None
     if not missing_config:
         try:
             with open(PARAMS_PATH, "r") as f:
@@ -146,8 +155,7 @@ async def get_system_status() -> dict[str, Any]:
         "missing_config": missing_config,
         "missing_auth": missing_auth,
         "missing_metrics": missing_metrics,
-        "masked_gemini": masked_gemini,
-        "masked_news": masked_news,
+        **masked_data,
         "config": config_data
     }
 
@@ -168,25 +176,38 @@ async def setup_env_file(keys : EnvSetup) -> dict[str, str]:
         dict[str, str]: status dictionary confirming successful generation.
     """
     try:
+        # map pydantic schema fields to exact .env key
+        payload_map = {
+            'gemini_key': 'GEMINI_API_KEY',
+            'news_key': 'NEWS_API_KEY',
+            'youtube_key': 'YOUTUBE_API_KEY',
+            'gcs_key': 'GCS_API_KEY',
+            'gcs_cx': 'GCS_CX_ID'
+        }
+
+        # initialize existing keys dict
+        existing_keys = {env_key: "" for env_key in payload_map.values()}
+
         # read existing keys, prevent overwriting with blanks/masks
-        existing_g_key = ""
-        existing_n_key = ""
         if os.path.exists(ENV_PATH):
             with open(ENV_PATH, "r") as f:
                 content = f.read()
-                g_match = re.search(r'GEMINI_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
-                n_match = re.search(r'NEWS_API_KEY=["\']?(.*?)["\']?(?:\n|$)', content)
-                if g_match: existing_g_key = g_match.group(1)
-                if n_match: existing_n_key = n_match.group(1)
 
-        # update if frontend provided a real, unmasked string
-        final_g_key = keys.gemini_key if (keys.gemini_key and "*" not in keys.gemini_key) else existing_g_key
-        final_n_key = keys.news_key if (keys.news_key and "*" not in keys.news_key) else existing_n_key
+                for env_key in payload_map.values():
+                    match = re.search(fr'{env_key}=["\']?(.*?)["\']?(?:\n|$)', content)
+                    if match:
+                        existing_keys[env_key] = match.group(1).strip()
 
         # write keys into .env
         with open(ENV_PATH, "w") as f:
-            f.write(f'GEMINI_API_KEY="{final_g_key}"\n')
-            f.write(f'NEWS_API_KEY="{final_n_key}"\n')
+            for py_key, env_key in payload_map.items():
+                # extract incoming value from pydantic 'keys' object
+                new_val = getattr(keys, py_key)
+                
+                # use new valid value, otherwise keep old value
+                final_val = new_val if (new_val and "*" not in new_val) else existing_keys[env_key]
+                f.write(f'{env_key}="{final_val}"\n')
+
         return {"status": "success", "message": ".env generated."}
     
     except Exception as e:
