@@ -1,8 +1,10 @@
 # The Waymo Perception Agent Project (Gemini AI)
 
-A Python-based AI agent utilizing PydanticAI, LangGraph, and Gemini API to scrape media sites and generate structured temporal metrics on autonomous vehicle perception.
+A Python-based AI agent utilizing `PydanticAI` and the Gemini API to scrape media sites (News, Reddit, YouTube, Social Media) and generate structured temporal metrics and macro-narratives on autonomous vehicle perception.
 
-The system architecture connects the data collection pipeline with a web-based interface. A FastAPI backend serves as the core engine, orchestrating requests between the frontend UI, the local SQLite database, and the external data collection tools. Administrators interact with the system entirely through a dashboard built natively with HTML, CSS, and Vanilla JavaScript. This frontend provides system monitoring, configuration management via a dynamic setup wizard, and secure local authentication. Under the hood, the Python server handles the backend execution—triggering the scraping modules, managing API rate limits with dynamic model fallback cascades, and enforcing strict JSON schema validation on the Gemini AI outputs to structure the extracted data.
+The system architecture connects a multi-tiered data collection pipeline with a web-based interface. A FastAPI backend serves as the core engine, orchestrating requests between the frontend UI, local SQLite databases, and external data collection tools. Administrators interact with the system entirely through a dashboard built natively with HTML, CSS, and Vanilla JavaScript (Chart.js). This frontend provides system monitoring, configuration management via a dynamic setup wizard, and secure local authentication.
+
+Under the hood, the Python orchestrator handles the backend execution—triggering the scraping modules, managing API rate limits with dynamic model fallback cascades, and enforcing strict JSON schema validation on the Gemini AI outputs. A secondary "Meta-Agent" automatically reviews historical metrics to synthesize real-time trending narratives.
 
 ***
 
@@ -35,40 +37,43 @@ waymo_perception_agent/
 │
 ├── config/
 │   ├── params.yaml         # Master configuration
-│   ├── settings.json       # Dynamic browser preferences backup (Auto-generated)
-│   └── auth.json           # Local admin credentials hash (Auto-generated)
+│   ├── roles.json          # User permisions configuration
+│   └── models.base.json    # Base model configuration (For intial setup/reset)
 │
 ├── core/
 │   ├── __init__.py
 │   ├── schema.py           # Pydantic models (Metrics definitions)
 │   ├── agent.py            # PydanticAI agent initialization
-│   ├── graph.py            # LangGraph workflow orchestration
+│   ├── system_check.py     # System Integrity & Auto-Recovery Engine
 │   └── utils.py            # Helper functions
 │
 ├── tools/
 │   ├── __init__.py
 │   ├── scraper.py          # Logic for Reddit/News API pulling
-│   └── db.py               # Logic for saving JSON/Metrics to your DB
+│   ├── export.py           # CSV/SVG generation and data export
+│   ├── db.py               # Logic for saving JSON/Metrics to your DB
+│   └── auth_db.py          # SQLite authentication and user management
 │
 ├── visualization/
 │   ├── __init__.py
-│   └── dash.py             # Logic for generating daily & trend graphs
+│   └── (FUTURE DEV)
 │
-├── frontend/               # All your web assets live here
+├── frontend/               # All web assets live here
 │   ├── css/
 │   │   ├── style.css       # Structural layout and responsive media queries
 │   │   └── theme.css       # Dark/Light mode, color variables, and alt theme styles
 │   ├── js/
 │   │   ├── api.js          # Global API SDK and routing Gatekeeper
 │   │   ├── auth.js         # Setup Wizard, login state, and password validation
-│   │   ├── charts.js       # Logic for rendering interactive graphs
+│   │   ├── analytics.js    # Data visualisation and Chart.js controller
+│   │   ├── datalist.js     # Dynamic UI lists and table population
 │   │   └── settings.js     # UI validation for the YAML parameters
 │   ├── index.html          # Dashboard, Login Overlay, and Setup Wizard
-│   ├── graphs.html         # Interactive Visualizations
+│   ├── analytics.html      # Data visualization and narrative dashboard
 │   ├── settings.html       # System Configuration Editor
 │   ├── prompt.html         # Prompt Editor
 │   ├── export.html         # CSV/Excel/PNG Exporter
-│   └── 404.html            # Custom error routing page
+│   └── error.html          # Custom error routing page
 │
 ├── server/                 # Your new backend bridge
 │   └── app.py              # The FastAPI server
@@ -78,9 +83,44 @@ waymo_perception_agent/
 ├── requirements.txt        # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
 │
 ├── README.md               # Project Descriptor and Guide
+├── ROADMAP.md              # Project Roadmap for future features
 ├── AI_DISCLOSURE.md        # Academic integrity disclosure
 ├── LICENSE                 # Apache 2.0 open-source license
 └── .gitignore              # Excludes sensitive files (.env) and virtual environments (venv/)
+```
+
+***
+
+## Program Flow
+```
+[ FRONTEND UI ]                                [ BACKEND & PIPELINE ]
+      │                                                  │
+ 1. User Clicks ─────────(HTTP)─────────► app.py (FastAPI Server)
+   "Run Scraper"                                         │
+                                                         ▼
+                                          main.py (The Orchestrator)
+                                                         │
+                                                         ├─► 2. tools/scraper.py
+                                                         │      (Pulls Raw Text & Video Metadata)
+                                                         │
+                                                         ├─► 3. core/agent.py (Perception Agent)
+                                                         │      (Turns Raw Text ➔ JSON Metrics)
+                                                         │
+                                                         ├─► 4. tools/db.py (save_metrics)
+                                                         │      (Saves JSON ➔ SQLite)
+                                                         │
+                                                         ├─► 5. tools/db.py (get_historical_metrics)
+                                                         │      (Pulls last 7 days of SQLite data)
+                                                         │
+                                                         ├─► 6. core/agent.py (Narrative Agent)
+                                                         │      (Turns 7 Days Data ➔ Trending Narratives)
+                                                         │
+                                                         └─► 7. tools/db.py (save_trending_narratives)
+                                                                (Saves Trends ➔ SQLite)
+                                                                 │
+                                                                 ▼
+[ ANALYTICS UI ] ◄───────(HTTP)────────── app.py (API Endpoints)
+ (Renders DB data)
 ```
 
 ***
