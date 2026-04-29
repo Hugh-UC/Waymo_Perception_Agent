@@ -36,6 +36,8 @@ USER_DB_PATH : str          = os.path.join(BASE_DIR, "data", "users.db")
 # Package Imports
 from tools.db import get_dashboard_totals, get_narratives, check_metrics_setup
 from tools.auth_db import create_user, verify_user, check_auth_setup, get_all_users, delete_user
+from tools.export import DataExtractor, export_data_and_graphs
+from core.utils import DataAggregator
 from main import run_pipeline
 
 # ---------------------------------------------------------
@@ -82,6 +84,12 @@ class NewUser(BaseModel):
     password: str
     role: str
     job_title: str = ""
+
+class ExportRequest(BaseModel):
+    """
+    Schema for validating which graphs the user wants to export.
+    """
+    selected_graphs: list[str]
 
 
 # ---------------------------------------------------------
@@ -554,6 +562,81 @@ async def get_dashboard_summary() -> dict[str, int]:
         dict[str, int]: dictionary containing 'total_runs' and 'total_sources'.
     """
     return get_dashboard_totals()
+
+@app.get("/api/analytics/chart/{chart_id}")
+async def get_chart_data(chart_id : str, days_back : int = 60) -> Any:
+    """
+    Dynamic endpoint that serves aggregated JSON data for any configured graph.
+
+    Args:
+        chart_id (str): unique identifier key matching a configuration in graphs.json.
+        days_back (int, optional): The number of days into the past to extract data for. Defaults to 60.
+
+    Raises:
+        HTTPException: if server cannot locate graphs.json configuration file (status 500).
+        HTTPException: if requested chart_id does not exist within configuration (status 404).
+        HTTPException: if server encounters an error during data extraction or aggregation (status 500).
+
+    Returns:
+        Any: dictionary containing status, specific graph configurations, and aggregated data payload ready for Chart.js rendering.
+    """
+    graph_cfg_path = os.path.join(BASE_DIR, "config", "graphs.json")
+    db_path = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
+    
+    if not os.path.exists(graph_cfg_path):
+        raise HTTPException(status_code=500, detail="Graph configuration file missing.")
+        
+    with open(graph_cfg_path, 'r') as f:
+        graph_configs = json.load(f)
+        
+    if chart_id not in graph_configs:
+        raise HTTPException(status_code=404, detail=f"Chart '{chart_id}' not found in configuration.")
+        
+    config = graph_configs[chart_id]
+    
+    try:
+        extractor = DataExtractor(db_path)
+        df = extractor.fetch_recent_metrics(days_back=days_back)
+        
+        if df.empty:
+            return {"status": "empty", "config": config, "data": {"labels": [], "datasets": []}}
+            
+        aggregated_payload = DataAggregator.aggregate_by_config(df, config)
+        return {"status": "success", "config": config, "data": aggregated_payload}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/export/config")
+async def get_export_config() -> dict[str, Any]:
+    """
+    Retrieves the available graphs from graphs.json for the export UI.
+
+    Returns:
+        dict[str, Any]: dictionary containing all configured graphs available for export. Returns empty dictionary if config file is missing.
+    """
+    graph_cfg_path = os.path.join(BASE_DIR, "config", "graphs.json")
+    if os.path.exists(graph_cfg_path):
+        with open(graph_cfg_path, 'r') as f:
+            return json.load(f)
+    return {}
+
+@app.post("/api/export/run")
+async def trigger_exports(req : ExportRequest) -> dict[str, str]:
+    """
+    Triggers the static export generation (CSVs and PNG/SVGs).
+
+    Raises:
+        HTTPException: if python export engine encounters a critical failure during generation (status 500).
+
+    Returns:
+        dict[str, str]: status dictionary confirming successful export completion with a user-facing message.
+    """
+    try:
+        export_data_and_graphs(selected_graphs=req.selected_graphs)
+        return {"status": "success", "message": "Export completed successfully! Check the /exports directory."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
 
 # ---------------------------------------------------------
