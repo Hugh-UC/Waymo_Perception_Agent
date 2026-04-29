@@ -6,7 +6,6 @@ Author: Hugh Brennan
 Date: 2026-04-22
 Version: 0.1
 """
-
 import os
 import yaml
 import json
@@ -76,18 +75,18 @@ async def extract_perception_metrics(prompt_text : str) -> dict[str, Any] | None
     try:
         # primary attempt
         result = await perception_agent.run(prompt)
-        return result.data.model_dump()
+        return result.output.model_dump()
         
     except Exception as e:
         error_message : str = str(e)
         if "503" in error_message or "429" in error_message:
-            print(f"\n[WARNING] Primary model overloaded. Initiating perception fallback cascade...")
+            print(f"\n[WARNING] Primary model '{agent_model}' overloaded.\n Initiating perception fallback cascade...")
             
             for fb_model in fallback_model:
-                print(f"\n[ATTEMPTING] Rerouting to {fb_model}...")
+                print(f"\n[ATTEMPTING] Rerouting to '{fb_model}...")
                 try:
                     result = await perception_agent.run(prompt, model=fb_model)
-                    return result.data.model_dump()
+                    return result.output.model_dump()
                 except Exception as fallback_error:
                     print(f"[CRITICAL ERROR] Fallback model '{fb_model}' failed: {fallback_error}")
             
@@ -140,18 +139,18 @@ async def synthesize_trending_narratives(raw_posts: list[dict[str, Any]]) -> dic
     try:
         # primary attempt
         result = await narrative_agent.run(prompt)
-        return result.data.model_dump()
+        return result.output.model_dump()
         
     except Exception as e:
         error_message : str = str(e)
         if "503" in error_message or "429" in error_message:
-            print(f"\n[WARNING] Primary model overloaded. Initiating narrative fallback cascade...")
+            print(f"\n[WARNING] Primary model '{agent_model}' overloaded. Initiating narrative fallback cascade...")
             
             for fb_model in fallback_model:
-                print(f"\n[ATTEMPTING] Rerouting to {fb_model}...")
+                print(f"\n[ATTEMPTING] Rerouting to '{fb_model}'...")
                 try:
                     result = await narrative_agent.run(prompt, model=fb_model)
-                    return result.data.model_dump()
+                    return result.output.model_dump()
                 except Exception as fallback_error:
                     print(f"[CRITICAL ERROR] Fallback model '{fb_model}' failed: {fallback_error}")
             

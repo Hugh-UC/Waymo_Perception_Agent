@@ -33,18 +33,18 @@ def _download_from_github(file_path: str, max_retries: int = 3) -> bool:
     Returns:
         bool: True if download and save was successful, False otherwise.
     """
-    # Normalize Windows backslashes to URL forward slashes
+    # normalize windows backslashes to URL forward slashes
     url_path : str = file_path.replace("\\", "/")
     target_url : str = f"{GITHUB_RAW_BASE_URL}{url_path}"
     
     for attempt in range(1, max_retries + 1):
         try:
             print(f"  -> Pulling {file_path} (Attempt {attempt}/{max_retries})...")
-            # 10-second timeout prevents the program from hanging indefinitely
+            # 10-second timeout prevents program from hanging indefinitely
             response : requests.Response = requests.get(target_url, timeout=10)
             response.raise_for_status()
             
-            # Ensure the local subdirectory exists before writing the file
+            # ensure local subdirectory exists before writing file
             os.makedirs(os.path.dirname(file_path) or ".", exist_ok=True)
             
             with open(file_path, "wb") as f:
@@ -56,7 +56,7 @@ def _download_from_github(file_path: str, max_retries: int = 3) -> bool:
         except requests.exceptions.RequestException as e:
             print(f"     [Network Error] {e}")
             if attempt < max_retries:
-                time.sleep(2) # Wait 2 seconds before retrying
+                time.sleep(2) # wait 2 seconds before retrying
                 
     return False
 
@@ -78,7 +78,7 @@ def verify_system_integrity() -> bool:
         os.path.join("exports", "graphs")
     ]
     
-    # 2. comprehensive map of the project's source code
+    # 2. comprehensive map of project's source code
     critical_files : List[str] = [
         "main.py",
         "requirements.txt",
@@ -86,17 +86,19 @@ def verify_system_integrity() -> bool:
         os.path.join("config", "models.base.json"),
         os.path.join("config", "roles.json"),
         os.path.join("config", "params.yaml"),
+        os.path.join("config", "graphs.json"),
         os.path.join("core", "__init__.py"),
         os.path.join("core", "schema.py"),
         os.path.join("core", "agent.py"),
-        os.path.join("core", "graph.py"),
         os.path.join("core", "utils.py"),
+        os.path.join("core", "system_check.py"),
         os.path.join("tools", "__init__.py"),
         os.path.join("tools", "scraper.py"),
         os.path.join("tools", "db.py"),
         os.path.join("tools", "auth_db.py"),
         os.path.join("tools", "export.py"),
-        os.path.join("visualization", "__init__.py"),
+        os.path.join("tools", "visualisation", "__init__.py"),
+        os.path.join("tools", "visualisation", "graph.py"),
         os.path.join("frontend", "index.html"),
         os.path.join("frontend", "analytics.html"),
         os.path.join("frontend", "settings.html"),
@@ -110,6 +112,7 @@ def verify_system_integrity() -> bool:
         os.path.join("frontend", "js", "datalist.js"),
         os.path.join("frontend", "js", "settings.js"),
         os.path.join("frontend", "js", "analytics.js"),
+        os.path.join("frontend", "js", "export.js"),
         os.path.join("frontend", "components", "auth-modals.html"),
         os.path.join("frontend", "components", "setup.html")
     ]
@@ -123,7 +126,7 @@ def verify_system_integrity() -> bool:
                 os.makedirs(directory, exist_ok=True)
                 print(f"  -> Generated missing directory: {directory}/")
 
-        # 2: auto-heal SQLite Databases
+        # 2: auto-heal SQLite databases
         # auth database is corrupted or missing tables
         if os.path.exists("data/users.db") and not check_auth_setup():
             print("  -> Repairing anomalous Authentication database...")
