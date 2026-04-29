@@ -209,7 +209,7 @@ touch requirements.txt
 
 **Windows/Ubuntu:**
 ```sh
-pip install fastapi uvicorn pydantic pydantic-ai google-genai python-dotenv pyyaml requests google-api-python-client duckduckgo-search
+pip install fastapi uvicorn pydantic pydantic-ai google-genai python-dotenv pyyaml requests google-api-python-client duckduckgo-search pandas matplotlib seaborn
 ```
 
 #### Update Requirements Document with new Packages

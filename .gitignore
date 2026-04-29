@@ -1,5 +1,5 @@
 # Virtual Environment Directory
-venv/
+.venv/
 
 # VS Code Workspace
 .vscode/
@@ -20,3 +20,4 @@ config/models.json
 # Generated Pipeline Exports
 exports/csv/*.csv
 exports/graphs/*.svg
+exports/graphs/*.png
