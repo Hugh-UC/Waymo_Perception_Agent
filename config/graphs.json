@@ -1,0 +1,40 @@
+{
+  "trend_analysis": {
+    "type": "dual_axis_line",
+    "filename": "trend_analysis",
+    "title": "Public Perception Trends: Safety & Sentiment Over Time",
+    "x_label": "Date",
+    "y_label": "Average Safety Score (1-10)",
+    "date_col": "scrape_date",
+    "y_col": ["safety_score", "sentiment_polarity"],
+    "y2_label": "Average Sentiment Polarity (-1 to 1)"
+  },
+  "friction_points": {
+    "type": "frequency_bar",
+    "filename": "friction_points",
+    "title": "Primary Public Friction Points (Risk Analysis)",
+    "x_label": "Number of Mentions",
+    "y_label": "Identified Friction Point",
+    "category_col": "friction_point"
+  },
+  "city_risk": {
+    "type": "avg_metric_bar",
+    "filename": "city_risk",
+    "title": "Expansion Risk Evaluation: Average Sentiment by City",
+    "x_label": "Average Sentiment Polarity (Negative to Positive)",
+    "y_label": "City / Location",
+    "group_col": "location",
+    "metric_col": "sentiment_polarity"
+  },
+  "media_battlefield": {
+    "type": "bubble_scatter",
+    "filename": "media_battlefield",
+    "title": "Media Battlefield: Tech Optimism vs. Safety Perception",
+    "x_label": "Tech Optimism Score",
+    "y_label": "Safety Perception Score",
+    "x_col": "tech_optimism",
+    "y_col": "safety_score",
+    "hue_col": "source_type",
+    "size_col": "relatability_score"
+  }
+}
