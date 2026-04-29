@@ -46,30 +46,33 @@
                     
                     <div id="panel-overview" class="settings-section">
                         <div class="d-flex flex-between align-center mb-15">
-                            <h2 class="mt-0 mb-0" style="border: none;">Macro Sentiment Timeline</h2>
+                            <h2 class="mt-0 mb-0" style="border: none;">Live Data Visualisations</h2>
                             
                             <div class="d-flex gap-05">
                                 <select id="graph-time-filter" class="text-sm" style="padding: 0.25rem 0.5rem;">
                                     <option value="7">Last 7 Days</option>
-                                    <option value="30" selected>Last 30 Days</option>
-                                    <option value="all">All Time</option>
-                                </select>
-                                <select id="graph-type-filter" class="text-sm" style="padding: 0.25rem 0.5rem;">
-                                    <option value="line" selected>Line Chart</option>
-                                    <option value="bar">Bar Chart</option>
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="60" selected>Last 60 Days</option>
+                                    <option value="365">All Time</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="d-flex gap-1 mb-15" style="flex-wrap: wrap;">
-                            <label class="d-flex align-center gap-05 text-sm fw-600"><input type="checkbox" class="source-toggle" value="news" checked> News Media</label>
-                            <label class="d-flex align-center gap-05 text-sm fw-600"><input type="checkbox" class="source-toggle" value="reddit" checked> Reddit</label>
-                            <label class="d-flex align-center gap-05 text-sm fw-600 text-muted"><input type="checkbox" class="source-toggle" value="tiktok" disabled> TikTok (Incoming)</label>
-                            <label class="d-flex align-center gap-05 text-sm fw-600 text-muted"><input type="checkbox" class="source-toggle" value="instagram" disabled> Instagram (Incoming)</label>
-                        </div>
-
-                        <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
-                            <canvas id="overviewChart"></canvas>
+                        <div class="dashboard-charts-grid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+                            <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
+                                <canvas id="trend_analysis-canvas"></canvas>
+                            </div>
+                            <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
+                                <canvas id="media_battlefield-canvas"></canvas>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div style="position: relative; height: 350px; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
+                                    <canvas id="friction_points-canvas"></canvas>
+                                </div>
+                                <div style="position: relative; height: 350px; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
+                                    <canvas id="city_risk-canvas"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

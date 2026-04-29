@@ -8,8 +8,51 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div id="app-container">
+        <nav class="top-nav">
+            <div class="nav-brand fw-bold">Waymo Agent v0.1</div>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/analytics.html">Analytics</a>
+                <a href="/settings.html">Settings</a>
+                <a href="/export.html" class="active">Export</a>
+            </div>
+            <div class="theme-toggle d-flex align-center gap-05">
+                <button id="btn-theme-toggle" class="btn-nav">🌗 Theme</button>
+                <button id="btn-logout" class="btn-nav hidden">Log Out</button>
+            </div>
+        </nav>
+
+        <main class="dashboard-grid" style="max-width: 800px; margin: 0 auto; padding-top: 2rem;">
+            <div class="stat-card">
+                <h2 class="mt-0 mb-05">Data & Graph Export Engine</h2>
+                <p class="text-muted mt-0 mb-2">Generate high-resolution PNGs, SVGs, and flat CSVs for offline reporting. Settings are governed by <code>graphs.json</code>.</p>
+                
+                <div style="background: var(--surface-inset); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h3 class="mt-0 text-sm text-muted">AVAILABLE EXPORT MODULES</h3>
+                    
+                    <div class="d-flex align-center gap-05 mb-1">
+                        <input type="checkbox" checked disabled> 
+                        <label class="fw-bold">Raw Metrics Dataset (CSV)</label>
+                    </div>
+
+                    <hr class="section-divider" style="margin: 1rem 0;">
+
+                    <div id="dynamic-graph-checklist" class="d-flex flex-column gap-05">
+                        <span class="text-sm text-muted">Loading graph configurations...</span>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-between align-center mt-2">
+                    <span id="export-status" class="text-sm fw-bold"></span>
+                    <button id="btn-run-export" class="btn btn-primary" style="padding: 0.75rem 2rem;">Run Full Export</button>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/export.js"></script>
 </body>
 </html>
