@@ -252,7 +252,7 @@ async def register_user(user : UserAccount) -> dict[str, str]:
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 @app.post("/api/login")
-async def login_api(user : UserAccount) -> dict[str, bool]:
+async def login_api(user : UserAccount) -> dict[str, Any]:
     """
     Verifies incoming login credentials against the stored SHA-256 hash in auth.json.
 

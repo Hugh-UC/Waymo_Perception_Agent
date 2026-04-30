@@ -99,8 +99,11 @@ class DataAggregator:
             # for scatter, Chart.js expects data in {x, y, r} format
             x_col, y_col, size_col, hue_col = config["x_col"], config["y_col"], config["size_col"], config["hue_col"]
             
+            # force conversion to float, prevent string math errors in js
+            df[size_col] = pd.to_numeric(df[size_col], errors='coerce').fillna(0.1)
+
             # normalize size column for bubble radius (e.g., scale 0-1 score to 5-25 pixels)
-            df['r'] = (df[size_col] * 20) + 5
+            df['r'] = (df[size_col] * 25) + 5
             
             # group by hue (source_type) to create separate datasets for legend
             datasets : list[dict | None] = []

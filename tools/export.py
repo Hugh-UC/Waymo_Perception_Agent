@@ -35,7 +35,7 @@ class DataExtractor:
         """
         self.db_path : str = db_path
 
-    def fetch_recent_metrics(self, days_back: int) -> pd.DataFrame:
+    def fetch_recent_metrics(self, days_back : int) -> pd.DataFrame:
         """
         Retrieves perception metrics within a specified historical timeframe.
 
@@ -96,7 +96,7 @@ class CSVGenerator:
 # ---------------------------------------------------------
 # Main Orchestrator
 # ---------------------------------------------------------
-def export_data_and_graphs(selected_graphs: list[str] | None = None) -> None:
+def export_data_and_graphs(selected_graphs : list[str] | None = None) -> None:
     """
     Triggers the extraction, CSV, and Graph generation pipeline.
 
@@ -107,10 +107,10 @@ def export_data_and_graphs(selected_graphs: list[str] | None = None) -> None:
         None
     """
     # construct absolute paths
-    db_path : str     = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
-    csv_dir : str     = os.path.join(BASE_DIR, "exports", "csv")
-    graphs_dir : str  = os.path.join(BASE_DIR, "exports", "graphs")
-    params_path : str = os.path.join(BASE_DIR, "config", "params.yaml")
+    db_path : str        = os.path.join(BASE_DIR, "data", "waymo_metrics.db")
+    csv_dir : str        = os.path.join(BASE_DIR, "exports", "csv")
+    graphs_dir : str     = os.path.join(BASE_DIR, "exports", "graphs")
+    params_path : str    = os.path.join(BASE_DIR, "config", "params.yaml")
     graph_cfg_path : str = os.path.join(BASE_DIR, "config", "graphs.json")
 
     # dynamically read days_back from params.yaml
