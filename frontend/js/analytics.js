@@ -4,21 +4,38 @@
  * Description: Manages Chart.js rendering, data filtering, and AI Narrative UI.
  */
 
+// register official plugin for bubble annotations
+Chart.register(ChartDataLabels);
+
 class ChartRenderer {
     constructor(canvasId) {
         this.canvasId = canvasId;
         this.chartInstance = null;
         
         const canvas = document.getElementById(this.canvasId);
-        if (!canvas) return; // Prevent crashes if canvas isn't on page
+        if (!canvas) return;        // prevent crashes if canvas isn't on page
         this.ctx = canvas.getContext('2d');
         
-        // Use CSS variables for seamless light/dark mode transitions
+        // use CSS variables for seamless light/dark mode transitions
         const style = getComputedStyle(document.body);
         this.textColor = style.getPropertyValue('--text-primary').trim() || '#cbd5e1';
         this.gridColor = style.getPropertyValue('--border-color').trim() || '#334155';
-        this.primaryColor = '#3b82f6';
-        this.secondaryColor = '#a855f7';
+
+        // helper to pull gradients
+        this.getPalette = (prefix, count) => {
+            let p = [];
+            for(let i=1; i<=count; i++) p.push(style.getPropertyValue(`--${prefix}-${i}`).trim());
+            return p;
+        };
+
+        this.magmaPalette = this.getPalette('magma', 8);
+        this.coolwarmPalette = this.getPalette('cw', 8);
+        this.genericPalette = [
+            style.getPropertyValue('--chart-color-1').trim(),
+            style.getPropertyValue('--chart-color-2').trim(),
+            style.getPropertyValue('--chart-color-3').trim(),
+            style.getPropertyValue('--chart-color-4').trim()
+        ];
     }
 
     clear() {
@@ -51,32 +68,76 @@ class ChartRenderer {
                 y: { grid: { color: this.gridColor }, ticks: { color: this.textColor } }
             }
         };
-
+        
+        // --- Structural Overrides ---
         if (config.type === 'dual_axis_line') {
             options.scales.y = { type: 'linear', position: 'left', title: { display: true, text: config.y_label, color: this.textColor } };
             options.scales.y1 = { type: 'linear', position: 'right', title: { display: true, text: config.y2_label, color: this.textColor }, grid: { drawOnChartArea: false } };
-        } else if (config.type === 'frequency_bar' || config.type === 'avg_metric_bar') {
+            options.plugins.datalabels = { display: false };        // hide labels
+        } 
+        else if (config.type === 'frequency_bar' || config.type === 'avg_metric_bar') {
             options.indexAxis = 'y'; 
+            options.plugins.legend.display = false; 
+            options.plugins.datalabels = { display: false };        // hide labels
+        }
+        else if (config.type === 'bubble_scatter') {
+            // force explicitly linear axes for bubbles
+            options.scales.x.type = 'linear';
+            options.scales.x.title = { display: true, text: config.x_label, color: this.textColor };
+            options.scales.y.type = 'linear';
+            options.scales.y.title = { display: true, text: config.y_label, color: this.textColor };
+            
+            // configure text for bubbles
+            options.plugins.datalabels = {
+                color: '#ffffff',
+                font: { size: 10, weight: 'bold' },
+                align: 'top',
+                offset: 5,
+                formatter: function(value, context) {
+                    // reverse engineer relatability score from radius
+                    let relScore = ((value.r - 5) / 25).toFixed(1);
+                    return `${context.dataset.label}\n(Rel: ${relScore})`;
+                }
+            };
         }
 
-        // expanded color palette for bubble hues
-        const palette = ['#3b82f6', '#a855f7', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
-
+        // --- Palette Application ---
         dataPayload.datasets.forEach((dataset, index) => {
-            const hexColor = palette[index % palette.length];
-            
-            if (config.type === 'bubble_scatter') {
-                // add 50% opacity (80 in hex) for overlapping bubbles
-                dataset.backgroundColor = hexColor + '80';
-            } else if (config.type === 'dual_axis_line') {
-                // prevent line charts from filling area underneath
-                dataset.backgroundColor = 'transparent';
-            } else {
-                dataset.backgroundColor = hexColor;
+            if (config.type === 'frequency_bar') {
+                // map magma gradient
+                dataset.backgroundColor = dataset.data.map((_, i) => this.magmaPalette[i % this.magmaPalette.length]);
+                dataset.borderWidth = 0;
+            } 
+            else if (config.type === 'avg_metric_bar') {
+                // map coolwarm gradient
+                dataset.backgroundColor = dataset.data.map(val => {
+                    if (val > 0.7) return this.coolwarmPalette[0];
+                    if (val > 0.4) return this.coolwarmPalette[1];
+                    if (val > 0.1) return this.coolwarmPalette[2];
+                    if (val > -0.1) return this.coolwarmPalette[3];
+                    if (val > -0.4) return this.coolwarmPalette[4];
+                    if (val > -0.7) return this.coolwarmPalette[5];
+                    return this.coolwarmPalette[7];
+                });
+                dataset.borderWidth = 0;
             }
-            
-            dataset.borderColor = hexColor;
-            dataset.borderWidth = 2;
+            else if (config.type === 'dual_axis_line') {
+                dataset.backgroundColor = 'transparent';        // remove fill
+                dataset.borderColor = this.genericPalette[index];
+                dataset.pointBackgroundColor = this.genericPalette[index];
+                dataset.pointStyle = index === 0 ? 'circle' : 'rect';       // match python shapes
+                dataset.pointRadius = 5;
+                dataset.pointHoverRadius = 8;
+                dataset.borderWidth = 3;
+                dataset.tension = 0.3;      // curve the lines
+            } 
+            else if (config.type === 'bubble_scatter') {
+                // assign colours
+                let color = dataset.label === 'News' ? this.genericPalette[2] : this.genericPalette[3];
+                dataset.backgroundColor = color + '80';     // hex + '80' = 50% opacity
+                dataset.borderColor = color;
+                dataset.borderWidth = 2;
+            }
         });
 
         this.chartInstance = new Chart(this.ctx, {
