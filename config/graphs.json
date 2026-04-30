@@ -21,7 +21,7 @@
     "type": "avg_metric_bar",
     "filename": "city_risk",
     "title": "Expansion Risk Evaluation: Average Sentiment by City",
-    "x_label": "Average Sentiment Polarity (Negative to Positive)",
+    "x_label": "Average Sentiment Polarity",
     "y_label": "City / Location",
     "group_col": "location",
     "metric_col": "sentiment_polarity"
