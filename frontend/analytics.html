@@ -59,20 +59,18 @@
                             </div>
                         </div>
 
-                        <div class="dashboard-charts-grid" style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+                        <div class="dashboard-charts-grid" style="display: flex; flex-direction: column; gap: 2rem;">
                             <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
                                 <canvas id="trend_analysis-canvas"></canvas>
                             </div>
                             <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
                                 <canvas id="media_battlefield-canvas"></canvas>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div style="position: relative; height: 350px; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
-                                    <canvas id="friction_points-canvas"></canvas>
-                                </div>
-                                <div style="position: relative; height: 350px; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
-                                    <canvas id="city_risk-canvas"></canvas>
-                                </div>
+                            <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
+                                <canvas id="friction_points-canvas"></canvas>
+                            </div>
+                            <div style="position: relative; height: 400px; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; background: var(--surface-inset);">
+                                <canvas id="city_risk-canvas"></canvas>
                             </div>
                         </div>
                     </div>

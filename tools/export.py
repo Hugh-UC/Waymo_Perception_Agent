@@ -169,6 +169,7 @@ def export_data_and_graphs(selected_graphs : list[str] | None = None) -> None:
 
     except Exception as e:
         print(f"  -> Export Error: {e}")
+        raise e
 
 
 if __name__ == "__main__":

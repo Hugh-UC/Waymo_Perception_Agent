@@ -28,8 +28,8 @@ class ChartRenderer {
             return p;
         };
 
-        this.magmaPalette = this.getPalette('magma', 8);
-        this.coolwarmPalette = this.getPalette('cw', 8);
+        this.magmaPalette = this.getPalette('magma', 11);
+        this.coolwarmPalette = this.getPalette('cw', 11);
         this.genericPalette = [
             style.getPropertyValue('--chart-color-1').trim(),
             style.getPropertyValue('--chart-color-2').trim(),
@@ -42,10 +42,32 @@ class ChartRenderer {
         if (this.chartInstance) this.chartInstance.destroy();
     }
 
+    // mathematical interpolator for continuous gradients between two hex codes
+    interpolateColor(color1, color2, factor) {
+        let result = "#";
+        for (let i = 0; i < 3; i++) {
+            let c1 = parseInt(color1.substring(1 + i * 2, 3 + i * 2), 16);
+            let c2 = parseInt(color2.substring(1 + i * 2, 3 + i * 2), 16);
+            let c = Math.round(c1 + factor * (c2 - c1));
+            result += c.toString(16).padStart(2, '0');
+        }
+        return result;
+    }
+
+    // maps an index (0.0 to 1.0) perfectly across an array of N colors
+    getColorFromPalette(paletteArray, normalizedValue) {
+        let exactIndex = normalizedValue * (paletteArray.length - 1);
+        let idx1 = Math.floor(exactIndex);
+        let idx2 = Math.ceil(exactIndex);
+        let factor = exactIndex - idx1;
+        return this.interpolateColor(paletteArray[idx1], paletteArray[idx2], factor);
+    }
+
     render(config, dataPayload) {
         if (!this.ctx) return;
         this.clear();
         
+        // map of chart types
         const typeMap = {
             'frequency_bar': 'bar',
             'avg_metric_bar': 'bar',
@@ -74,29 +96,81 @@ class ChartRenderer {
             options.scales.y = { type: 'linear', position: 'left', title: { display: true, text: config.y_label, color: this.textColor } };
             options.scales.y1 = { type: 'linear', position: 'right', title: { display: true, text: config.y2_label, color: this.textColor }, grid: { drawOnChartArea: false } };
             options.plugins.datalabels = { display: false };        // hide labels
-        } 
-        else if (config.type === 'frequency_bar' || config.type === 'avg_metric_bar') {
+
+            // configure datapoints tooltip
+            options.plugins.tooltip = {
+                callbacks: {
+                    label: function(context) {
+                        // get original label
+                        let originalLabel = context.dataset.label;
+                        
+                        // remove text after parenthesis
+                        let cleanLabel = originalLabel.split(' (')[0];
+                        
+                        // return clean label
+                        return `${cleanLabel}: ${context.raw.toFixed(2)}`;
+                    }
+                }
+            };
+        }
+        else if (config.type === 'frequency_bar') {
             options.indexAxis = 'y'; 
-            options.plugins.legend.display = false; 
+            options.plugins.legend.display = false;                 // hide legend
             options.plugins.datalabels = { display: false };        // hide labels
+            options.scales.y.grid = { display: false };             // hide grid lines
+        }
+        else if(config.type === 'avg_metric_bar') {
+            options.indexAxis = 'y'; 
+            options.plugins.legend.display = false;                 // hide legend
+            options.plugins.datalabels = { display: false };        // hide labels
+            options.scales.y.grid = { display: false };             // hide grid lines
+
+            options.scales.y.ticks = {
+                autoSkip: false,
+                color: this.textColor,
+                font: { size: 9 }                                  // slightly smaller font
+            };
+
+            // destinct verticle line at 0
+            options.scales.x.grid = {
+                color: (context) => context.tick.value === 0 ? '#888888' : 'transparent',
+                lineWidth: (context) => context.tick.value === 0 ? 1 : 0
+            };
         }
         else if (config.type === 'bubble_scatter') {
             // force explicitly linear axes for bubbles
-            options.scales.x.type = 'linear';
+            // x-axis
+            options.scales.x.type = 'category';
+            options.scales.x.labels = ['Pessimistic', 'Neutral', 'Optimistic', 'Inspired'];
             options.scales.x.title = { display: true, text: config.x_label, color: this.textColor };
+            options.scales.x.offset = true;
+            // y-axis
             options.scales.y.type = 'linear';
             options.scales.y.title = { display: true, text: config.y_label, color: this.textColor };
+            options.scales.y.suggestedMin = 0; 
+            options.scales.y.suggestedMax = 10;
+            options.scales.y.offset = true;
             
-            // configure text for bubbles
-            options.plugins.datalabels = {
-                color: '#ffffff',
-                font: { size: 10, weight: 'bold' },
-                align: 'top',
-                offset: 5,
-                formatter: function(value, context) {
-                    // reverse engineer relatability score from radius
-                    let relScore = ((value.r - 5) / 25).toFixed(1);
-                    return `${context.dataset.label}\n(Rel: ${relScore})`;
+            // hide labels
+            options.plugins.datalabels = { display: false };
+
+            // configure datapoints tooltip
+            options.plugins.tooltip = {
+                callbacks: {
+                    // customize body text of the hover tooltip
+                    label: function(context) {
+                        // reverse engineer relatability score from the radius (r)
+                        let relScore = ((context.raw.r - 4) / 16).toFixed(2);
+
+                        let safetyScore = context.raw.y;
+                        
+                        // returning array automatically creates beautifully spaced multiple lines!
+                        return [
+                            `${context.dataset.label}:`,
+                            `| relatability - ${relScore}`,
+                            `| perception - ${safetyScore}`
+                        ];
+                    }
                 }
             };
         }
@@ -107,34 +181,34 @@ class ChartRenderer {
                 // map magma gradient
                 dataset.backgroundColor = dataset.data.map((_, i) => this.magmaPalette[i % this.magmaPalette.length]);
                 dataset.borderWidth = 0;
+                dataset.barPercentage = 0.95;
+                dataset.categoryPercentage = 1.0;
             } 
             else if (config.type === 'avg_metric_bar') {
-                // map coolwarm gradient
-                dataset.backgroundColor = dataset.data.map(val => {
-                    if (val > 0.7) return this.coolwarmPalette[0];
-                    if (val > 0.4) return this.coolwarmPalette[1];
-                    if (val > 0.1) return this.coolwarmPalette[2];
-                    if (val > -0.1) return this.coolwarmPalette[3];
-                    if (val > -0.4) return this.coolwarmPalette[4];
-                    if (val > -0.7) return this.coolwarmPalette[5];
-                    return this.coolwarmPalette[7];
+                // continuous gradient mapping
+                dataset.backgroundColor = dataset.data.map((_, i) => {
+                    let norm = dataset.data.length > 1 ? i / (dataset.data.length - 1) : 0;
+                    return this.getColorFromPalette(this.coolwarmPalette, norm);
                 });
                 dataset.borderWidth = 0;
+                // thicken bars (matplotlib style)
+                dataset.barPercentage = 0.95;
+                dataset.categoryPercentage = 1.0;;
             }
             else if (config.type === 'dual_axis_line') {
-                dataset.backgroundColor = 'transparent';        // remove fill
+                dataset.backgroundColor = 'transparent';                    // remove fill
                 dataset.borderColor = this.genericPalette[index];
                 dataset.pointBackgroundColor = this.genericPalette[index];
                 dataset.pointStyle = index === 0 ? 'circle' : 'rect';       // match python shapes
                 dataset.pointRadius = 5;
                 dataset.pointHoverRadius = 8;
                 dataset.borderWidth = 3;
-                dataset.tension = 0.3;      // curve the lines
+                dataset.tension = 0.3;                                      // curve the lines
             } 
             else if (config.type === 'bubble_scatter') {
                 // assign colours
                 let color = dataset.label === 'News' ? this.genericPalette[2] : this.genericPalette[3];
-                dataset.backgroundColor = color + '80';     // hex + '80' = 50% opacity
+                dataset.backgroundColor = color + '40';                     // hex + '40' = 25% opacity
                 dataset.borderColor = color;
                 dataset.borderWidth = 2;
             }

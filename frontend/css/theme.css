@@ -25,25 +25,31 @@
     --chart-color-3: #10b981;   /* Green (News) */
     --chart-color-4: #f59e0b;   /* Orange (Reddit) */
 
-    /* Matplotlib 'Magma' Gradient (For Friction Points) */
+    /* Matplotlib 'Magma' Gradient (11 Stops) */
     --magma-1: #3b0f70;
-    --magma-2: #641a80;
-    --magma-3: #8c2981;
-    --magma-4: #b73779;
-    --magma-5: #de4968;
-    --magma-6: #f7705c;
-    --magma-7: #fe9f6d;
-    --magma-8: #fcfdbf;
+    --magma-2: #52157f;
+    --magma-3: #6d1c81;
+    --magma-4: #8c2981;
+    --magma-5: #ac337d;
+    --magma-6: #cc4273;
+    --magma-7: #e95462;
+    --magma-8: #f8765c;
+    --magma-9: #fe9f6d;
+    --magma-10: #fdc58f;
+    --magma-11: #fcfdbf;
 
-    /* Matplotlib 'Coolwarm' Gradient (For City Risk) */
+    /* Matplotlib 'Coolwarm' Gradient (11 Stops) */
     --cw-1: #3b4cc0;
-    --cw-2: #6788ee;
-    --cw-3: #9abbff;
-    --cw-4: #c9d7f0;
-    --cw-5: #edd1c2;
-    --cw-6: #f7a889;
-    --cw-7: #e26952;
-    --cw-8: #b40426;
+    --cw-2: #5f7ce0;
+    --cw-3: #85a8f5;
+    --cw-4: #a9c8f6;
+    --cw-5: #c9dbf1;
+    --cw-6: #e2e2e2;
+    --cw-7: #f1d4c6;
+    --cw-8: #f3a88d;
+    --cw-9: #e67357;
+    --cw-10: #cb3530;
+    --cw-11: #b40426;
 }
 
 @media (prefers-color-scheme: dark) {

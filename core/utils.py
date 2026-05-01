@@ -102,8 +102,8 @@ class DataAggregator:
             # force conversion to float, prevent string math errors in js
             df[size_col] = pd.to_numeric(df[size_col], errors='coerce').fillna(0.1)
 
-            # normalize size column for bubble radius (e.g., scale 0-1 score to 5-25 pixels)
-            df['r'] = (df[size_col] * 25) + 5
+            # normalize size column for bubble radius (e.g., scale 0-1 score to 2-16 pixels)
+            df['r'] = (df[size_col] * 16) + 2
             
             # group by hue (source_type) to create separate datasets for legend
             datasets : list[dict | None] = []
