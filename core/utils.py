@@ -10,7 +10,7 @@ import pandas as pd
 from typing import Any
 
 # ---------------------------------------------------------
-# 
+# Time Formatting
 # ---------------------------------------------------------
 def get_search_time_str(search_time: float | int) -> str:
     """
@@ -35,7 +35,7 @@ def get_search_time_str(search_time: float | int) -> str:
 
 
 # ---------------------------------------------------------
-# 
+# Data Aggrigation Engine
 # ---------------------------------------------------------
 class DataAggregator:
     """
@@ -54,19 +54,21 @@ class DataAggregator:
         Returns:
             dict[str, Any]: dictionary containing 'labels' and 'datasets' ready for Chart.js.
         """
-        chart_type : str = config.get("type")
-        
-        if chart_type == "frequency_bar":
+        # frequency / count aggregation
+        # driven by: 'category_col'
+        if "category_col" in config:
             category_col : str = config["category_col"]
             counts = df[category_col].value_counts().reset_index()
             counts.columns = [category_col, 'count']
             
             return {
                 "labels": counts[category_col].tolist(),
-                "datasets": [{"label": config["x_label"], "data": counts['count'].tolist()}]
+                "datasets": [{"label": config.get("x_label", "Count"), "data": counts['count'].tolist()}]
             }
             
-        elif chart_type == "avg_metric_bar":
+        # average metric by group aggregation
+        # driven by: 'group_col' & 'metric_col'
+        elif "group_col" in config and "metric_col" in config:
             group_col : str  = config["group_col"]
             metric_col : str = config["metric_col"]
             
@@ -75,46 +77,65 @@ class DataAggregator:
             
             return {
                 "labels": grouped[group_col].tolist(),
-                "datasets": [{"label": config["x_label"], "data": grouped[metric_col].tolist()}]
+                "datasets": [{"label": config.get("x_label", "Average"), "data": grouped[metric_col].tolist()}]
             }
             
-        elif chart_type == "dual_axis_line":
+        # 3. time series / dual axis aggregation
+        # driven by : 'date_col'
+        elif "date_col" in config and isinstance(config.get("y_col"), list):
             date_col : str      = config["date_col"]
             y_cols : list[str]  = config["y_col"]        # expects list of two columns
             
-            # group by date and calculate mean for both columns
+            # group by date and calculate mean
             trends = df.groupby(date_col)[y_cols].mean().reset_index()
+            
             # convert timestamp to string for JSON serialization
-            trends[date_col] = trends[date_col].dt.strftime('%Y-%m-%d') 
+            if pd.api.types.is_datetime64_any_dtype(trends[date_col]):
+                trends[date_col] = trends[date_col].dt.strftime('%Y-%m-%d') 
             
             return {
                 "labels": trends[date_col].tolist(),
                 "datasets": [
-                    {"label": config["y_label"], "data": trends[y_cols[0]].tolist(), "yAxisID": "y"},
-                    {"label": config["y2_label"], "data": trends[y_cols[1]].tolist(), "yAxisID": "y1"}
+                    {"label": config.get("y_label", y_cols[0]), "data": trends[y_cols[0]].tolist(), "yAxisID": "y"},
+                    {"label": config.get("y2_label", y_cols[1]), "data": trends[y_cols[1]].tolist(), "yAxisID": "y1"}
                 ]
             }
             
-        elif chart_type == "bubble_scatter":
-            # for scatter, Chart.js expects data in {x, y, r} format
-            x_col, y_col, size_col, hue_col = config["x_col"], config["y_col"], config["size_col"], config["hue_col"]
+        # multi-dimensional scatter / bubble aggregation
+        # driven by: 'x_col' & single 'y_col'
+        elif "x_col" in config and isinstance(config.get("y_col"), str):
+            x_col: str = config["x_col"]
+            y_col: str = config["y_col"]
             
-            # force conversion to float, prevent string math errors in js
-            df[size_col] = pd.to_numeric(df[size_col], errors='coerce').fillna(0.1)
-
-            # normalize size column for bubble radius (e.g., scale 0-1 score to 2-16 pixels)
-            df['r'] = (df[size_col] * 16) + 2
+            # optional attributes
+            size_col: str | None = config.get("size_col")
+            hue_col: str | None  = config.get("hue_col")
             
-            # group by hue (source_type) to create separate datasets for legend
             datasets : list[dict | None] = []
-            for name, group in df.groupby(hue_col):
-                bubble_data = group[[x_col, y_col, 'r']].rename(columns={x_col: 'x', y_col: 'y'}).to_dict(orient='records')
-                datasets.append({"label": str(name), "data": bubble_data})
+            
+            # if size_col exists, format bubble {x, y, r}, otherwise scatter {x, y}
+            if size_col:
+                # force float conversion, prevents string math errors in js
+                df[size_col] = pd.to_numeric(df[size_col], errors='coerce').fillna(0.1)
+                df['r'] = (df[size_col] * 16) + 2
+                cols_to_extract = [x_col, y_col, 'r']
+            else:
+                cols_to_extract = [x_col, y_col]
+
+            # group by hue to create separate datasets for legend
+            if hue_col:
+                for name, group in df.groupby(hue_col):
+                    scatter_data = group[cols_to_extract].rename(columns={x_col: 'x', y_col: 'y'}).to_dict(orient='records')
+                    datasets.append({"label": str(name).title(), "data": scatter_data})
+            else:
+                scatter_data = df[cols_to_extract].rename(columns={x_col: 'x', y_col: 'y'}).to_dict(orient='records')
+                datasets.append({"label": config.get("y_label", "Dataset"), "data": scatter_data})
                 
             return {
                 "labels": [],       # scatters don't use primary labels
                 "datasets": datasets
             }
             
+        # fallback
         else:
             return {"labels": [], "datasets": []}
