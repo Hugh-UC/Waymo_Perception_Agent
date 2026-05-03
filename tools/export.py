@@ -15,7 +15,7 @@ import pandas as pd
 from typing import Any
 from datetime import datetime, timezone, timedelta
 
-from tools.visualisation.graph import GraphGenerator, DualAxisConfig, FrequencyBarConfig, AvgMetricBarConfig, BubbleScatterConfig
+from tools.visualisation.graph import GraphGenerator
 
 # define absolute path
 BASE_DIR : str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -102,6 +102,9 @@ def export_data_and_graphs(selected_graphs : list[str] | None = None) -> None:
 
     Args:
         selected_graphs (list[str] | None): specific keys of graphs to export. if None, exports all.
+    
+    Raises:
+        Exception: bubbles up any system, file, or data aggregation errors encountered during export.
 
     Returns:
         None
@@ -146,24 +149,10 @@ def export_data_and_graphs(selected_graphs : list[str] | None = None) -> None:
                 if selected_graphs is not None and key not in selected_graphs:
                     continue
 
-                graph_type : str | None = data.pop('type', None)
-
-                if not graph_type:
-                    print(f"  -> Entry '{key}' missing graph type, gracefully skipping to next entry.")
-                    continue
+                if "filename" not in data:
+                    data["filename"] = key
                 
-                if graph_type == 'dual_axis_line':
-                    cfg : DualAxisConfig = DualAxisConfig(**data)
-                    graph_generator.generate_dual_axis_trend(df, cfg)
-                elif graph_type == 'frequency_bar':
-                    cfg : FrequencyBarConfig = FrequencyBarConfig(**data)
-                    graph_generator.generate_horizontal_bar(df, cfg)
-                elif graph_type == 'avg_metric_bar':
-                    cfg : AvgMetricBarConfig = AvgMetricBarConfig(**data)
-                    graph_generator.generate_avg_metric_bar(df, cfg)
-                elif graph_type == 'bubble_scatter':
-                    cfg : BubbleScatterConfig = BubbleScatterConfig(**data)
-                    graph_generator.generate_bubble_scatter(df, cfg)
+                graph_generator.generate_from_config(df, data)
 
         print("  -> All exports and visualizations successfully compiled.")
 
