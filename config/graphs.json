@@ -1,33 +1,65 @@
 {
   "trend_analysis": {
-    "type": "dual_axis_line",
+    "type": "line",
     "filename": "trend_analysis",
     "title": "Public Perception Trends: Safety & Sentiment Over Time",
     "x_label": "Date",
     "y_label": "Average Safety Score (1-10)",
     "date_col": "scrape_date",
     "y_col": ["safety_score", "sentiment_polarity"],
-    "y2_label": "Average Sentiment Polarity (-1 to 1)"
+    "y2_label": "Average Sentiment Polarity (-1 to 1)",
+    "presentation": {
+      "palette": "generic",
+      "color_mapping": "categorical_line",
+      "tooltip_style": "dual_axis",
+      "has_dual_axis": true,
+      "show_legend": true,
+      "hide_datalabels": true,
+      "y_grid": true,
+      "x_grid": true
+    }
   },
   "friction_points": {
-    "type": "frequency_bar",
+    "type": "bar",
     "filename": "friction_points",
     "title": "Primary Public Friction Points (Risk Analysis)",
     "x_label": "Number of Mentions",
     "y_label": "Identified Friction Point",
-    "category_col": "friction_point"
+    "category_col": "friction_point",
+    "presentation": {
+      "palette": "magma",
+      "color_mapping": "sequential",
+      "tooltip_style": "standard",
+      "show_legend": false,
+      "hide_datalabels": true,
+      "y_grid": false,
+      "x_grid": true,
+      "index_axis": "y"
+    }
   },
   "city_risk": {
-    "type": "avg_metric_bar",
+    "type": "bar",
     "filename": "city_risk",
     "title": "Expansion Risk Evaluation: Average Sentiment by City",
     "x_label": "Average Sentiment Polarity",
     "y_label": "City / Location",
     "group_col": "location",
-    "metric_col": "sentiment_polarity"
+    "metric_col": "sentiment_polarity",
+    "presentation": {
+      "palette": "coolwarm",
+      "color_mapping": "gradient_index", 
+      "tooltip_style": "standard",
+      "tick_font_size": 9,
+      "show_legend": false,
+      "hide_datalabels": true,
+      "y_grid": false,
+      "x_grid": false,
+      "draw_zero_line": true,
+      "index_axis": "y"
+    }
   },
   "media_battlefield": {
-    "type": "bubble_scatter",
+    "type": "bubble",
     "filename": "media_battlefield",
     "title": "Media Battlefield: Tech Optimism vs. Safety Perception",
     "x_label": "Tech Optimism Score",
@@ -35,6 +67,21 @@
     "x_col": "tech_optimism",
     "y_col": "safety_score",
     "hue_col": "source_type",
-    "size_col": "relatability_score"
+    "size_col": "relatability_score",
+    "presentation": {
+      "palette": "generic",
+      "color_mapping": "categorical_bubble",
+      "custom_colors": {
+        "News": "--chart-color-3",
+        "Reddit": "--chart-color-4"
+      },
+      "tooltip_style": "bubble",
+      "x_type": "category",
+      "x_labels": ["Pessimistic", "Neutral", "Optimistic", "Inspired"],
+      "y_min": 0,
+      "y_max": 10,
+      "show_legend": true,
+      "hide_datalabels": true
+    }
   }
 }
