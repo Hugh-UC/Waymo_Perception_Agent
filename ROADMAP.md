@@ -1,5 +1,15 @@
 # Project Roadmap | Multi-Modal Intelligence Synthesizer
 
+## Table of Contents
+
+- [Project Backlog & Future Epics (Unscheduled)](#-project-backlog--future-epics-unscheduled)
+- [Project Sprints](#project-sprints)
+  - [🏃‍♂️ Sprint 5](#️-sprint-5-dynamic-architecture--agentic-data-quality-current)
+  - [🏁 Sprint 4](#-sprint-4-dashboard-foundation--export-automation-completed-april-29---may-2)
+  - [🏁 Sprint 3](#-sprint-3-social-media--video-integration-completed-april-28)
+
+---
+
 ## 📋 Project Backlog & Future Epics (Unscheduled)
 
 ### 1. Architecture & Tech Debt
@@ -67,19 +77,22 @@
 
 ---
 
-## 🏁 Sprint 4: Dashboard Foundation & Export Automation (Completed)
-**Objective:** Establish a robust FastAPI backend, a secure SQLite authentication layer, and automate the generation of presentation-ready exports.
+## 🏁 Sprint 4: Dashboard Foundation & Export Automation (Completed ~April 29 - May 2)
+**Objective:** Establish a robust FastAPI backend, introduce AI prompt assistance, and automate the generation of presentation-ready exports.
 
-* **System Setup Wizard:** Created a dynamic Boot Manager to intercept unconfigured states and guide users through API key input and admin creation.
-* **Dynamic Routing & Security:** Built API interceptors to restrict page access until logged in, and implemented parameterized dynamic HTML error pages (404, 500).
+* **Dynamic Routing & Security:** Built API interceptors to restrict page access until logged in, and implemented parameterized dynamic HTML error pages (`error.html` handles 404, 500).
+* **Setup Wizard Refactor:** Updated the Boot Manager architecture from Sprint 3 to implement best practices and align with the new routing configurations.
 * **Dynamic Data Chunking:** Refactored the backend API and frontend JS to dynamically request specific date ranges (defaulting to 60 days) to preserve memory and performance.
-* **Automated Exporter:** Built a Python pipeline (`export.py`, `graph.py`) to generate flat CSVs and high-resolution (SVG/PNG) Matplotlib/Seaborn graphics for executive reporting.
-* **Auth Architecture:** Implemented secure SHA-256 password hashing and session management.
+* **Automated Exporter:** Built a Python pipeline to generate flat CSVs and high-resolution (SVG/PNG) Matplotlib/Seaborn graphics for executive reporting.
+* *Files Changed:* `export.py` (Created), `graph.py` (Created), `export.html` (Created), `export.js` (Created), `error.html` (Created), `app.py`, `analytics.js`, `settings.js`.
 
 ---
 
-## 🏁 Sprint 3: Social Media & Video Integration (Completed)
-**Objective:** Expand scraping capabilities beyond News/Reddit to include high-fidelity video platforms.
+## 🏁 Sprint 3: Social Media & Video Integration (Completed ~April 28)
+**Objective:** Expand scraping capabilities to include high-fidelity video platforms and establish baseline authentication.
 
-* **Hybrid YouTube Scraper:** Implemented a graceful degradation model. Attempts the official YouTube Data API v3 for deep metadata; falls back to DuckDuckGo search parsing if quota fails or keys are missing.
-* **UI Settings Integration:** Updated setup/settings HTML to allow users to securely input optional API keys for YouTube and Google Custom Search.
+* **System Setup Wizard:** Created a dynamic Boot Manager to intercept unconfigured states and guide users through API key input and admin creation.
+* **Auth Architecture:** Implemented secure SHA-256 password hashing and session management.
+* **Hybrid YouTube Scraper:** Implemented a graceful degradation model in `scraper.py`. Attempts the official YouTube Data API v3 for deep metadata; falls back to DuckDuckGo search parsing if quota fails or keys are missing.
+* **UI Settings Integration:** Updated `setup.html` and `settings.html` to allow users to securely input optional API keys for YouTube and Google Custom Search.
+* *Files Changed:* `auth.js` (Created), `auth_db.py` (Created), `auth-modals.html` (Created), `setup.html`, `settings.html`, `scraper.py`, `app.py`.
