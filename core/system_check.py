@@ -109,10 +109,12 @@ def verify_system_integrity() -> bool:
         os.path.join("frontend", "css", "theme.css"),
         os.path.join("frontend", "js", "api.js"),
         os.path.join("frontend", "js", "auth.js"),
-        os.path.join("frontend", "js", "datalist.js"),
+        os.path.join("frontend", "js", "boot.js"),
         os.path.join("frontend", "js", "settings.js"),
         os.path.join("frontend", "js", "analytics.js"),
         os.path.join("frontend", "js", "export.js"),
+        os.path.join("frontend", "js", "tools", "ChartRenderer.js"),
+        os.path.join("frontend", "js", "tools", "utils.js"),
         os.path.join("frontend", "components", "auth-modals.html"),
         os.path.join("frontend", "components", "setup.html")
     ]
