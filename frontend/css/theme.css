@@ -60,6 +60,12 @@
     --cw-9: #e67357;
     --cw-10: #cb3530;
     --cw-11: #b40426;
+
+    /* Notification Variables */
+    --notify-transition-speed: 300ms;
+    --notify-overlay-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black default */
+    --notify-z-overlay: 9998;
+    --notify-z-box: 9999;
 }
 
 @media (prefers-color-scheme: dark) {

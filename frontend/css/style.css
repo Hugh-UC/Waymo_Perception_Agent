@@ -414,7 +414,7 @@ body {
 }
 
 /* -----------------------------------------
-   6. Extracted Semantic Classes (Replaces Inline HTML)
+   6. Semantic Classes
    ----------------------------------------- */
 .header-flex {
     display: flex;
@@ -422,11 +422,43 @@ body {
     align-items: center;
 }
 
-.status-alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    font-weight: bold;
+/* Base class for the notification box ensuring it sits on top */
+.message-container {
+    position: fixed;
+    top: 20px;
+    right: 20px; /* Or left/center depending on your layout preference */
+    z-index: var(--notify-z-box);
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: opacity var(--notify-transition-speed) ease-in-out, transform var(--notify-transition-speed) ease-in-out;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* The full-screen blocking overlay */
+#message-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--notify-overlay-color);
+    z-index: var(--notify-z-overlay);
+    transition: opacity var(--notify-transition-speed) ease-in-out;
+    opacity: 1;
+    pointer-events: all; /* Blocks clicks to elements beneath */
+}
+
+/* Smooth hiding logic */
+#message-overlay.hidden,
+.message-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.message-container.hidden {
+    transform: translateY(-20px); /* Optional: Adds a slight upward slide when hiding */
 }
 
 .section-divider {
