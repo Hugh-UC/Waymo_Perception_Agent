@@ -8,7 +8,11 @@
  * Version: 0.1
  */
 
-const DatalistManager = {
+// import internal requests helper
+import { API } from './api.js';
+
+
+export const DatalistManager = {
     availableModels: [],
 
     /**
@@ -16,7 +20,7 @@ const DatalistManager = {
      */
     async initialize() {
         try {
-            const data = await window.API.getModels();
+            const data = await API.getModels();
             this.availableModels = data.models;
         } catch (error) {
             console.error("Failed to load models list:", error);
@@ -62,6 +66,3 @@ const DatalistManager = {
         input.addEventListener("blur", () => list.classList.add("hidden"));
     }
 };
-
-// Expose to global window object
-window.DatalistManager = DatalistManager;
