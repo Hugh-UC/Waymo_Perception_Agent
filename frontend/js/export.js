@@ -2,64 +2,107 @@
  * File: export.js
  * Title: Export Page Controller
  * Description: Dynamically builds the export UI from graphs.json and triggers Python generation.
+ * Author: Hugh Brennan
+ * Date: 2026-04-30
+ * Version: 0.1
  */
-document.addEventListener("DOMContentLoaded", async () => {
-    const checklistContainer = document.getElementById("dynamic-graph-checklist");
-    const exportBtn          = document.getElementById("btn-run-export");
-    const statusText         = document.getElementById("export-status");
 
-    // 1. fetch available graphs from api
-    try {
-        const response = await fetch('/api/export/config');
-        const configs  = await response.json();
+// import dependencies
+import { API } from './api.js';
+import { DOMUtils, NotificationManager } from './tools/utils.js';
+
+/**
+ * A centralized schema of DOM selectors that decouples the JavaScript logic 
+ * from specific HTML IDs and classes, facilitating easier UI refactoring.
+ */
+const UI_SELECTORS = {
+    checklistContainer: "dynamic-graph-checklist",
+    exportBtn: "btn-run-export",
+    statusText: "export-status"
+};
+
+/**
+ * Manages the UI and API interactions for exporting dashboard graphs.
+ */
+class ExportController {
+    static els = {};
+
+    /**
+     * Initializes the controller, maps DOM elements, and loads configurations.
+     */
+    static async init() {
+        this.els = DOMUtils.mapElements(UI_SELECTORS);
         
-        checklistContainer.innerHTML = '';      // clear loading text
-        
-        for (const [key, data] of Object.entries(configs)) {
-            const row = document.createElement("div");
-
-            row.className = "d-flex align-center gap-05";
-            row.innerHTML = `
-                <input type="checkbox" class="export-chk" id="chk-${key}" value="${key}" checked> 
-                <label for="chk-${key}">${data.title} <span class="text-muted text-sm">(.png / .svg)</span></label>
-            `;
-
-            checklistContainer.appendChild(row);
+        if (!this.els.checklistContainer || !this.els.exportBtn) {
+            console.warn("[ExportController] Required DOM elements missing. Initialization aborted.");
+            return;
         }
-    } catch (error) {
-        checklistContainer.innerHTML = '<span style="color: var(--error-color);">Failed to load configurations. Ensure backend is running.</span>';
+
+        this.bindEvents();
+        await this.loadConfigurations();
     }
 
-    // 2. handle export trigger
-    exportBtn.addEventListener("click", async () => {
-        exportBtn.disabled = true;
-        exportBtn.innerText = "Generating...";
-        statusText.style.color = "var(--text-primary)";
-        statusText.innerText = "Running Python DataExtractor... please wait.";
-
-        // grab all checked boxes
-        const selectedGraphs = Array.from(document.querySelectorAll('.export-chk:checked')).map(cb => cb.value);
-
+    /**
+     * Fetches available graph configurations from the API and renders the checklist.
+     */
+    static async loadConfigurations() {
         try {
-            const response = await fetch('/api/export/run', { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ selected_graphs: selectedGraphs })
-            });
-            const result = await response.json();
+            // fetch available graphs from api
+            const configs = await API.getExportConfig();
 
-            if (result.status === "success") {
-                statusText.style.color = "var(--success-color)";
-                statusText.innerText = "✅ " + result.message;
-            } else {
-                throw new Error("Export failed");
+            // clear loading text
+            this.els.checklistContainer.innerHTML = '';
+            
+            for (const [key, data] of Object.entries(configs)) {
+                const row = document.createElement("div");
+                row.className = "d-flex align-center gap-05";
+                row.innerHTML = `
+                    <input type="checkbox" class="export-chk" id="chk-${key}" value="${key}" checked> 
+                    <label for="chk-${key}">${data.title} <span class="text-muted text-sm">(.png / .svg)</span></label>
+                `;
+                this.els.checklistContainer.appendChild(row);
             }
         } catch (error) {
-            statusText.style.color = "var(--error-color)";
-            statusText.innerText = "❌ An error occurred during export.";
-        } finally {
-            exportBtn.disabled = false;
-            exportBtn.innerText = "Run Full Export";
+            this.els.checklistContainer.innerHTML = '<span style="color: var(--error-color);">Failed to load configurations. Ensure backend is running.</span>';
+            console.error("[Export Error] Failed to load configurations:", error);
         }
-    });
-});
+    }
+
+    /**
+     * Attaches event listeners for the export trigger button.
+     */
+    static bindEvents() {
+        this.els.exportBtn.addEventListener("click", async () => {
+            this.els.exportBtn.disabled = true;
+            this.els.exportBtn.innerText = "Generating...";
+            this.els.statusText.style.color = "var(--text-primary)";
+            this.els.statusText.innerText = "Running Python DataExtractor... please wait.";
+
+            // grab all checked boxes
+            const selectedGraphs = Array.from(document.querySelectorAll('.export-chk:checked')).map(cb => cb.value);
+
+            try {
+                const result = await API.runExport({ selected_graphs: selectedGraphs });
+
+                if (result.status === "success") {
+                    this.els.statusText.style.color = "var(--success-color)";
+                    this.els.statusText.innerText = "✅ " + result.message;
+                    NotificationManager.show("Export completed successfully!");
+                } else {
+                    throw new Error("Backend reported export failure.");
+                }
+            } catch (error) {
+                this.els.statusText.style.color = "var(--error-color)";
+                this.els.statusText.innerText = "❌ An error occurred during export.";
+                NotificationManager.show("Export failed. Check the server logs.", true);
+                console.error("[Export Error]:", error);
+            } finally {
+                this.els.exportBtn.disabled = false;
+                this.els.exportBtn.innerText = "Run Full Export";
+            }
+        });
+    }
+}
+
+// execute controller on DOM load
+document.addEventListener("DOMContentLoaded", () => ExportController.init());

@@ -132,5 +132,21 @@ export const API = {
      * Fetches the registered AI models to populate the custom dropdowns.
      * @returns {Promise<Object>} Object containing an array of available models.
      */
-    getModels: () => API._request("/api/models")
+    getModels: () => API._request("/api/models"),
+
+    // ---------------------------------------------------------
+    // Export Endpoints (For export.js)
+    // ---------------------------------------------------------
+    /**
+     * Retrieves the available graph configurations for the export dashboard.
+     * @returns {Promise<Object>} Dictionary of exportable graphs and their metadata.
+     */
+    getExportConfig: () => API._request("/api/export/config"),
+
+    /**
+     * Triggers the Python DataExtractor pipeline to generate flat files and images.
+     * @param {Object} payload - Object containing an array of selected graph IDs.
+     * @returns {Promise<Object>} Result status and message from the backend.
+     */
+    runExport: (payload) => API._request("/api/export/run", "POST", payload)
 };
