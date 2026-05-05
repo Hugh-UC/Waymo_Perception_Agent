@@ -21,7 +21,7 @@ import { CookieUtils, NotificationManager, DOMUtils, DatalistManager } from './t
  */
 const UI_SELECTORS = {
     global: {
-        statusBox: "save-status",
+        messageBox: "message-box",
         syncModal: "sync-modal",
         diffContainer: "diff-container",
         btnKeepBrowser: "btn-keep-browser",
