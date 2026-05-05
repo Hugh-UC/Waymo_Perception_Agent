@@ -36,57 +36,69 @@ Under the hood, the Python orchestrator handles the backend execution—triggeri
 waymo_perception_agent/
 │
 ├── config/
-│   ├── params.yaml         # Master configuration
-│   ├── roles.json          # User permisions configuration
-│   └── models.base.json    # Base model configuration (For intial setup/reset)
+│   ├── params.yaml               # Master configuration
+│   ├── roles.json                # User permissions configuration
+│   ├── models.base.json          # Base model configuration (For intial setup/reset)
+│   ├── models.json               # Dynamically updated active models list
+│   └── graphs.json               # Centralized charting configurations
 │
 ├── core/
 │   ├── __init__.py
-│   ├── schema.py           # Pydantic models (Metrics definitions)
-│   ├── agent.py            # PydanticAI agent initialization
-│   ├── system_check.py     # System Integrity & Auto-Recovery Engine
-│   └── utils.py            # Helper functions
+│   ├── schema.py                 # Pydantic models (Metrics definitions)
+│   ├── agent.py                  # PydanticAI agent initialization
+│   ├── system_check.py           # System Integrity & Auto-Recovery Engine
+│   └── utils.py                  # Helper functions
 │
 ├── tools/
+│   ├── visualisation/
+│   │   ├── __init__.py
+│   │   └── graph.py              # Matplotlib/Seaborn graph generation pipelines
 │   ├── __init__.py
-│   ├── scraper.py          # Logic for Reddit/News API pulling
-│   ├── export.py           # CSV/SVG generation and data export
-│   ├── db.py               # Logic for saving JSON/Metrics to your DB
-│   └── auth_db.py          # SQLite authentication and user management
+│   ├── scraper.py                # Logic for Reddit/News API pulling
+│   ├── export.py                 # CSV/SVG generation and data export
+│   ├── db.py                     # Logic for saving JSON/Metrics to your DB
+│   └── auth_db.py                # SQLite authentication and user management
 │
-├── visualization/
+├── visualisation/
 │   ├── __init__.py
-│   └── (FUTURE DEV)
+│   └── graph.py                  # Matplotlib/Seaborn graph generation pipelines
 │
-├── frontend/               # All web assets live here
+├── frontend/                     # All web assets live here
+│   ├── components/
+│   │   ├── auth-modals.html
+│   │   └── setup.html
 │   ├── css/
-│   │   ├── style.css       # Structural layout and responsive media queries
-│   │   └── theme.css       # Dark/Light mode, color variables, and alt theme styles
+│   │   ├── style.css             # Structural layout and responsive media queries
+│   │   └── theme.css             # Dark/Light mode, color variables, and alt theme styles
 │   ├── js/
-│   │   ├── api.js          # Global API SDK and routing Gatekeeper
-│   │   ├── auth.js         # Setup Wizard, login state, and password validation
-│   │   ├── analytics.js    # Data visualisation and Chart.js controller
-│   │   ├── datalist.js     # Dynamic UI lists and table population
-│   │   └── settings.js     # UI validation for the YAML parameters
-│   ├── index.html          # Dashboard, Login Overlay, and Setup Wizard
-│   ├── analytics.html      # Data visualization and narrative dashboard
-│   ├── settings.html       # System Configuration Editor
-│   ├── prompt.html         # Prompt Editor
-│   ├── export.html         # CSV/Excel/PNG Exporter
-│   └── error.html          # Custom error routing page
+│   │   ├── tools/
+│   │   │   ├── ChartRenderer.js  # Dynamic JSON-driven Chart.js wrapper
+│   │   │   └── utils.js          # Shared NotificationManager, DOM, and Cookie utilities
+│   │   ├── api.js                # Global API SDK and routing Gatekeeper
+│   │   ├── auth.js               # Setup Wizard, login state, and password validation
+│   │   ├── boot.js               # Master execution controller and routing gatekeeper
+│   │   ├── analytics.js          # Data visualisation and Chart.js controller
+│   │   ├── export.js             # UI controller for data/image downloads
+│   │   └── settings.js           # UI validation for the YAML parameters
+│   ├── index.html                # Dashboard, Login Overlay, and Setup Wizard
+│   ├── analytics.html            # Data visualization and narrative dashboard
+│   ├── settings.html             # System Configuration Editor
+│   ├── prompt.html               # Prompt Editor
+│   ├── export.html               # CSV/Excel/PNG Exporter
+│   └── error.html                # Custom error routing page
 │
-├── server/                 # Your new backend bridge
-│   └── app.py              # The FastAPI server
+├── server/                       # Backend Bridge
+│   └── app.py                    # The FastAPI server
 │
-├── .env                    # API keys (Gemini, News, Reddit)
-├── main.py                 # Entry point to run the daily job
-├── requirements.txt        # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
+├── .env                          # API keys (Gemini, News, Reddit)
+├── main.py                       # Entry point to run the daily job
+├── requirements.txt              # Dependencies (langgraph, pydantic-ai, google-genai, etc.)
 │
-├── README.md               # Project Descriptor and Guide
-├── ROADMAP.md              # Project Roadmap for future features
-├── AI_DISCLOSURE.md        # Academic integrity disclosure
-├── LICENSE                 # Apache 2.0 open-source license
-└── .gitignore              # Excludes sensitive files (.env) and virtual environments (venv/)
+├── README.md                     # Project Descriptor and Guide
+├── ROADMAP.md                    # Project Roadmap for future features
+├── AI_DISCLOSURE.md              # Academic integrity disclosure
+├── LICENSE                       # Apache 2.0 open-source license
+└── .gitignore                    # Excludes sensitive files (.env) and virtual environments (venv/)
 ```
 
 ***
