@@ -10,42 +10,40 @@
 
 // import dependencies
 import { API } from './api.js';
-import { NotificationManager } from './tools/utils.js';
-import { DatalistManager } from './datalist.js';
+import { NotificationManager, DatalistManager } from './tools/utils.js';
 
 
-export const AuthManager = {
+export class AuthManager {
     // ---------------------------------------------------------
     // Session & Cookie Management
     // ---------------------------------------------------------
-    setSession(username) {
+    static setSession(username) {
         sessionStorage.setItem("wpa_session", username);
-    },
+    }
     
-    getSession() {
+    static getSession() {
         return sessionStorage.getItem("wpa_session");
-    },
+    }
     
-    clearSession() { 
+    static clearSession() { 
         sessionStorage.removeItem("wpa_session");
-    },
+    }
     
-    isPasswordSafe(pwd) {
+    static isPasswordSafe(pwd) {
         if (pwd.length < 8) return false;
         return !(/[&|;$><`\\!]/.test(pwd));
-    },
-
+    }
 
     // ---------------------------------------------------------
     // Setup Wizard Smart State Management
     // ---------------------------------------------------------
-    wizardFallbackModels: [],
-    
+    static wizardFallbackModels = [];
+
     /**
      * Transitions the UI to a specific wizard step and updates the progress bar.
      * @param {number} stepNumber - The target step (0, 1, 2, or 3).
      */
-    goToStep(stepNumber) {
+    static goToStep(stepNumber) {
         // get all steps and hide them
         const allSteps = document.querySelectorAll('.wizard-step');
         allSteps.forEach(el => el.classList.add('hidden'));
@@ -61,13 +59,13 @@ export const AuthManager = {
             const percentage = (stepNumber / totalSteps) * 100; 
             progressFill.style.width = `${percentage}%`;
         }
-    },
+    }
 
     /**
      * Prefills an input with a masked string (e.g. **********a48f) and disables it.
      * Activates the "Clear key" button to allow users to overwrite it.
      */
-    setupMaskedInput(inputId, wrapperId, btnId, maskedValue) {
+    static setupMaskedInput(inputId, wrapperId, btnId, maskedValue) {
         const input = document.getElementById(inputId);
         const wrapper = document.getElementById(wrapperId);
         const btn = document.getElementById(btnId);
@@ -87,12 +85,12 @@ export const AuthManager = {
                 input.focus();
             }, { once: true });
         }
-    },
+    }
 
     /**
      * Renders the visual tags for fallback models in Step 2.
      */
-    renderWizardFallbackTags() {
+    static renderWizardFallbackTags() {
         const container = document.getElementById("setup-fallback-tags");
         if (!container) return;
         container.innerHTML = "";
@@ -110,13 +108,13 @@ export const AuthManager = {
                 this.renderWizardFallbackTags();
             });
         });
-    },
+    }
     
     /**
      * Parses the backend status to prefill parameters and route the user
      * to the exact step they need to complete.
      */
-    initializeWizardState(status) {
+    static initializeWizardState(status) {
         // 1. prefill ENV parameters if backend provides masked versions
         if (status.masked_gemini) {
             this.setupMaskedInput("setup-gemini", "clear-gemini-wrapper", "btn-clear-gemini", status.masked_gemini);
@@ -181,250 +179,255 @@ export const AuthManager = {
         // 5. go to welcome screen
         this.goToStep(0);
     }
-};
+}
 
-// progress controller
-document.addEventListener("DOMContentLoaded", async () => {
-    // initialize custom dropdowns (external controller)
-    if (DatalistManager) {
-        await DatalistManager.initialize();
-        DatalistManager.setup("setup-primary-model", "primary-model-list");
-        DatalistManager.setup("setup-new-fallback", "fallback-model-list");
-    }
 
-    // dashboard scraper trigger controller
-    const runBtn = document.getElementById("btn-run-scraper");
-    if (runBtn) {
-        runBtn.addEventListener("click", async () => {
-            runBtn.textContent = "Running Agent... (Please wait)";
-            runBtn.disabled = true;
-            runBtn.style.opacity = "0.7";
-            
-            try {
-                await API.runScraper();
-                runBtn.textContent = "Run Scraper Now";
-                runBtn.disabled = false;
-                runBtn.style.opacity = "1";
-                NotificationManager.show("Pipeline Complete! Check the exports/ folder.");
-                window.location.reload(); // Refresh to update dashboard numbers
-            } catch (error) {
-                NotificationManager.show("Pipeline Failed: " + (error.detail || "Check server logs."));
-                runBtn.textContent = "Run Scraper Now";
-                runBtn.disabled = false;
-                runBtn.style.opacity = "1";
-            }
+/**
+ * Binds DOM events for the login overlay, setup wizard, and global system utilities.
+ */
+export class AuthUIController {
+    static async init() {
+        // initialize custom dropdowns (external controller)
+        if (DatalistManager) {
+            await DatalistManager.initialize(API);
+            DatalistManager.setup("setup-primary-model", "primary-model-list");
+            DatalistManager.setup("setup-new-fallback", "fallback-model-list");
+        }
+
+        // dashboard scraper trigger controller
+        const runBtn = document.getElementById("btn-run-scraper");
+        if (runBtn) {
+            runBtn.addEventListener("click", async () => {
+                runBtn.textContent = "Running Agent... (Please wait)";
+                runBtn.disabled = true;
+                runBtn.style.opacity = "0.7";
+                
+                try {
+                    await API.runScraper();
+                    runBtn.textContent = "Run Scraper Now";
+                    runBtn.disabled = false;
+                    runBtn.style.opacity = "1";
+                    NotificationManager.show("Pipeline Complete! Check the exports/ folder.");
+                    window.location.reload(); // Refresh to update dashboard numbers
+                } catch (error) {
+                    NotificationManager.show("Pipeline Failed: " + (error.detail || "Check server logs."));
+                    runBtn.textContent = "Run Scraper Now";
+                    runBtn.disabled = false;
+                    runBtn.style.opacity = "1";
+                }
+            });
+        }
+
+        // get modal elements
+        const wizardModal   = document.getElementById("setup-wizard");
+        const loginModal    = document.getElementById("login-overlay");
+        const appContainer  = document.getElementById("app-container");
+
+        // Step 0: Intro
+        document.getElementById("btn-start-wizard")?.addEventListener("click", () => {
+            AuthManager.goToStep(1);
         });
-    }
 
-    // get modal elements
-    const wizardModal = document.getElementById("setup-wizard");
-    const loginModal = document.getElementById("login-overlay");
-    const appContainer = document.getElementById("app-container");
+        document.getElementById("btn-continue-wizard")?.addEventListener("click", () => {
+            // resume highest known progress
+            AuthManager.goToStep(AuthManager.nextIncompleteStep);
+        });
 
-    // Step 0: Intro
-    document.getElementById("btn-start-wizard")?.addEventListener("click", () => {
-        AuthManager.goToStep(1);
-    });
-
-    document.getElementById("btn-continue-wizard")?.addEventListener("click", () => {
-        // resume highest known progress
-        AuthManager.goToStep(AuthManager.nextIncompleteStep);
-    });
-
-    document.getElementById("btn-restart-wizard")?.addEventListener("click", () => {
-        AuthManager.nextIncompleteStep = 1;           // reset internal state 
-        AuthManager.goToStep(1);
-    });
+        document.getElementById("btn-restart-wizard")?.addEventListener("click", () => {
+            AuthManager.nextIncompleteStep = 1;           // reset internal state 
+            AuthManager.goToStep(1);
+        });
 
 
-    // Step 1: save APIs
-    document.getElementById("form-step-1")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const errBox = document.getElementById("setup-error");
-        errBox.classList.add("hidden");
+        // Step 1: save APIs
+        document.getElementById("form-step-1")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById("setup-error");
+            errBox.classList.add("hidden");
 
-        const geminiInput = document.getElementById("setup-gemini");
-        const newsInput = document.getElementById("setup-news");
-        const payload = {};
+            const geminiInput = document.getElementById("setup-gemini");
+            const newsInput = document.getElementById("setup-news");
+            const payload = {};
 
-        // include keys in payload,
-        // if they have been actively altered or are brand new
-        if (geminiInput.dataset.isMasked !== "true") {
-            payload.gemini_key = geminiInput.value.trim();
-        }
-        if (newsInput.dataset.isMasked !== "true") {
-            payload.news_key = newsInput.value.trim();
-        }
-
-        // add optional fields ONLY if their checkboxes are ticked
-        const toggleYt = document.getElementById('toggle-yt');
-        const toggleGcs = document.getElementById('toggle-gcs');
-
-        payload.youtube_key = (toggleYt && toggleYt.checked) ? document.getElementById('setup-yt-key').value.trim() : "";
-        payload.gcs_key = (toggleGcs && toggleGcs.checked) ? document.getElementById('setup-gcs-key').value.trim() : "";
-        payload.gcs_cx = (toggleGcs && toggleGcs.checked) ? document.getElementById('setup-gcs-cx').value.trim() : "";
-
-        try {
-            // fire the API request, if there is new unmasked data
-            if (Object.keys(payload).length > 0) {
-                await API.setupKeys(payload);
+            // include keys in payload,
+            // if they have been actively altered or are brand new
+            if (geminiInput.dataset.isMasked !== "true") {
+                payload.gemini_key = geminiInput.value.trim();
             }
-            // move to next step
-            AuthManager.goToStep(2);
-        } catch (error) {
-            errBox.textContent = error.detail ? `Server Error: ${error.detail}` : "Failed to save API keys.";
-            errBox.classList.remove("hidden");
-        }
-    });
+            if (newsInput.dataset.isMasked !== "true") {
+                payload.news_key = newsInput.value.trim();
+            }
 
+            // add optional fields ONLY if their checkboxes are ticked
+            const toggleYt = document.getElementById('toggle-yt');
+            const toggleGcs = document.getElementById('toggle-gcs');
 
-    // Step 2: agent intelligence models
-    document.getElementById("btn-add-setup-fallback")?.addEventListener("click", () => {
-        const input = document.getElementById("setup-new-fallback");
-        const errBox = document.getElementById("setup-fallback-error");
-        errBox.classList.add("hidden");
-        
-        const val = input.value.trim();
-        if (!val) return;
-        
-        if (AuthManager.wizardFallbackModels.includes(val)) {
-            errBox.textContent = "Model is already in the fallback list.";
-            errBox.classList.remove("hidden");
-            return;
-        }
+            payload.youtube_key = (toggleYt && toggleYt.checked) ? document.getElementById('setup-yt-key').value.trim() : "";
+            payload.gcs_key = (toggleGcs && toggleGcs.checked) ? document.getElementById('setup-gcs-key').value.trim() : "";
+            payload.gcs_cx = (toggleGcs && toggleGcs.checked) ? document.getElementById('setup-gcs-cx').value.trim() : "";
 
-        AuthManager.wizardFallbackModels.push(val);
-        input.value = "";
-        AuthManager.renderWizardFallbackTags();
-    });
-
-    document.getElementById("form-step-2")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const errBox = document.getElementById("setup-model-error");
-        errBox.classList.add("hidden");
-
-        try {
-            const config = await API.getConfig();
-            config.agent.model_name = document.getElementById("setup-primary-model").value.trim();
-            config.agent.fallback_model = AuthManager.wizardFallbackModels;
-            
-            await API.updateConfig({ scraper: config.scraper, agent: config.agent });
-            AuthManager.goToStep(3);
-        } catch(error) {
-            errBox.textContent = "Failed to update params.yaml.";
-            errBox.classList.remove("hidden");
-        }
-    });
-
-
-    // Step 3: register local admin
-    document.getElementById("form-step-3")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const errBox = document.getElementById("register-error");
-        errBox.classList.add("hidden");
-
-        const user = document.getElementById("new-user").value.trim();
-        const pass = document.getElementById("new-pass").value;
-
-        if (!AuthManager.isPasswordSafe(pass)) {
-            errBox.textContent = "Password must be 8+ characters without shell symbols (&, |, ;, $).";
-            errBox.classList.remove("hidden");
-            return;
-        }
-
-        try {
-            await API.registerUser({ username: user, password: pass });
-            
-            AuthManager.setSession(user);
-            
-            wizardModal.classList.add("hidden");
-            appContainer.classList.remove("hidden");
-            document.getElementById("btn-logout")?.classList.remove("hidden");
-            
-        } catch (error) {
-            errBox.textContent = error.detail ? `Registration failed: ${error.detail}` : "Network Error.";
-            errBox.classList.remove("hidden");
-        }
-    });
-
-
-    // login overlay
-    document.getElementById("login-form")?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const errBox = document.getElementById("login-error");
-        errBox.classList.add("hidden");
-
-        const user = document.getElementById("login-user").value.trim();
-        const pass = document.getElementById("login-pass").value;
-
-        try {
-            const data = await API.loginUser({ username: user, password: pass });
-            if (data.authenticated) {
-                AuthManager.setSession(user);
-                loginModal.classList.add("hidden");
-                appContainer.classList.remove("hidden");
-                document.getElementById("btn-logout")?.classList.remove("hidden");
-            } else {
-                errBox.textContent = "Incorrect Username or Password.";
+            try {
+                // fire the API request, if there is new unmasked data
+                if (Object.keys(payload).length > 0) {
+                    await API.setupKeys(payload);
+                }
+                // move to next step
+                AuthManager.goToStep(2);
+            } catch (error) {
+                errBox.textContent = error.detail ? `Server Error: ${error.detail}` : "Failed to save API keys.";
                 errBox.classList.remove("hidden");
             }
-        } catch (error) {
-            errBox.textContent = "Network Error communicating with server.";
-            errBox.classList.remove("hidden");
-        }
-    });
+        });
 
 
-    // logout
-    document.getElementById("btn-logout")?.addEventListener("click", () => {
-        AuthManager.clearSession();
-        window.location.reload(); 
-    });
+        // Step 2: agent intelligence models
+        document.getElementById("btn-add-setup-fallback")?.addEventListener("click", () => {
+            const input = document.getElementById("setup-new-fallback");
+            const errBox = document.getElementById("setup-fallback-error");
+            errBox.classList.add("hidden");
+            
+            const val = input.value.trim();
+            if (!val) return;
+            
+            if (AuthManager.wizardFallbackModels.includes(val)) {
+                errBox.textContent = "Model is already in the fallback list.";
+                errBox.classList.remove("hidden");
+                return;
+            }
 
+            AuthManager.wizardFallbackModels.push(val);
+            input.value = "";
+            AuthManager.renderWizardFallbackTags();
+        });
 
-    // forgot password flow
-    document.getElementById("link-forgot-password")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        document.getElementById("login-overlay").classList.add("hidden");
-        document.getElementById("reset-overlay").classList.remove("hidden");
-    });
+        document.getElementById("form-step-2")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById("setup-model-error");
+            errBox.classList.add("hidden");
 
-    document.getElementById("btn-cancel-reset")?.addEventListener("click", () => {
-        document.getElementById("reset-overlay").classList.add("hidden");
-        document.getElementById("login-overlay").classList.remove("hidden");
-    });
-
-    document.getElementById("btn-confirm-reset")?.addEventListener("click", async () => {
-        const errBox = document.getElementById("reset-error");
-        const btn = document.getElementById("btn-confirm-reset");
-        
-        errBox.classList.add("hidden");
-        btn.textContent = "Wiping System...";
-        btn.disabled = true;
-
-        try {
-            await API.factoryReset();
-            AuthManager.clearSession(); // Purge old browser token
-            window.location.reload();   // Reload to trigger Setup Wizard
-        } catch (error) {
-            errBox.textContent = error.detail ? error.detail : "Failed to reset system.";
-            errBox.classList.remove("hidden");
-            btn.textContent = "Wipe & Reset";
-            btn.disabled = false;
-        }
-    });
-
-    // ---------------------------------------------------------
-    // Global UI Nav Scroll Effect
-    // ---------------------------------------------------------
-    const topNav = document.querySelector('.top-nav');
-    if (topNav) {
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 10) {
-                topNav.classList.add('scrolled');
-            } else {
-                topNav.classList.remove('scrolled');
+            try {
+                const config = await API.getConfig();
+                config.agent.model_name = document.getElementById("setup-primary-model").value.trim();
+                config.agent.fallback_model = AuthManager.wizardFallbackModels;
+                
+                await API.updateConfig({ scraper: config.scraper, agent: config.agent });
+                AuthManager.goToStep(3);
+            } catch(error) {
+                errBox.textContent = "Failed to update params.yaml.";
+                errBox.classList.remove("hidden");
             }
         });
+
+
+        // Step 3: register local admin
+        document.getElementById("form-step-3")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById("register-error");
+            errBox.classList.add("hidden");
+
+            const user = document.getElementById("new-user").value.trim();
+            const pass = document.getElementById("new-pass").value;
+
+            if (!AuthManager.isPasswordSafe(pass)) {
+                errBox.textContent = "Password must be 8+ characters without shell symbols (&, |, ;, $).";
+                errBox.classList.remove("hidden");
+                return;
+            }
+
+            try {
+                await API.registerUser({ username: user, password: pass });
+                
+                AuthManager.setSession(user);
+                
+                wizardModal.classList.add("hidden");
+                appContainer.classList.remove("hidden");
+                document.getElementById("btn-logout")?.classList.remove("hidden");
+                
+            } catch (error) {
+                errBox.textContent = error.detail ? `Registration failed: ${error.detail}` : "Network Error.";
+                errBox.classList.remove("hidden");
+            }
+        });
+
+
+        // login overlay
+        document.getElementById("login-form")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById("login-error");
+            errBox.classList.add("hidden");
+
+            const user = document.getElementById("login-user").value.trim();
+            const pass = document.getElementById("login-pass").value;
+
+            try {
+                const data = await API.loginUser({ username: user, password: pass });
+                if (data.authenticated) {
+                    AuthManager.setSession(user);
+                    loginModal.classList.add("hidden");
+                    appContainer.classList.remove("hidden");
+                    document.getElementById("btn-logout")?.classList.remove("hidden");
+                } else {
+                    errBox.textContent = "Incorrect Username or Password.";
+                    errBox.classList.remove("hidden");
+                }
+            } catch (error) {
+                errBox.textContent = "Network Error communicating with server.";
+                errBox.classList.remove("hidden");
+            }
+        });
+
+
+        // logout
+        document.getElementById("btn-logout")?.addEventListener("click", () => {
+            AuthManager.clearSession();
+            window.location.reload(); 
+        });
+
+
+        // forgot password flow
+        document.getElementById("link-forgot-password")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            document.getElementById("login-overlay").classList.add("hidden");
+            document.getElementById("reset-overlay").classList.remove("hidden");
+        });
+
+        document.getElementById("btn-cancel-reset")?.addEventListener("click", () => {
+            document.getElementById("reset-overlay").classList.add("hidden");
+            document.getElementById("login-overlay").classList.remove("hidden");
+        });
+
+        document.getElementById("btn-confirm-reset")?.addEventListener("click", async () => {
+            const errBox = document.getElementById("reset-error");
+            const btn = document.getElementById("btn-confirm-reset");
+            
+            errBox.classList.add("hidden");
+            btn.textContent = "Wiping System...";
+            btn.disabled = true;
+
+            try {
+                await API.factoryReset();
+                AuthManager.clearSession(); // Purge old browser token
+                window.location.reload();   // Reload to trigger Setup Wizard
+            } catch (error) {
+                errBox.textContent = error.detail ? error.detail : "Failed to reset system.";
+                errBox.classList.remove("hidden");
+                btn.textContent = "Wipe & Reset";
+                btn.disabled = false;
+            }
+        });
+
+        // ---------------------------------------------------------
+        // Global UI Nav Scroll Effect
+        // ---------------------------------------------------------
+        const topNav = document.querySelector('.top-nav');
+        if (topNav) {
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 10) {
+                    topNav.classList.add('scrolled');
+                } else {
+                    topNav.classList.remove('scrolled');
+                }
+            });
+        }
     }
-});
+}
