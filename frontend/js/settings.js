@@ -10,8 +10,7 @@
 
 // import dependencies
 import { API } from './api.js';
-import { CookieUtils, NotificationManager, DOMUtils } from './tools/utils.js';
-import { DatalistManager } from './datalist.js';
+import { CookieUtils, NotificationManager, DOMUtils, DatalistManager } from './tools/utils.js';
 
 // ---------------------------------------------------------
 // DOM Selector Configuration Map
@@ -85,12 +84,10 @@ class ModelManager {
      * Initializes the ModelManager, maps DOM elements, and sets safety defaults.
      * @param {Object} selectors - UI_SELECTORS.models configuration.
      */
-    constructor() {
+    constructor(selectors) {
         // Cache DOM elements
-        this.els = {
-            agentInput: document.getElementById(selectors),
-            customContainer: null       // will hold dynamically created container
-        };
+        this.els = DOMUtils.mapElements(selectors);
+        this.els.customContainer = null;        // will hold dynamically created container
         
         this.containerId = selectors.customContainerId;
 
@@ -445,7 +442,7 @@ class ConfigManager {
     async initialize() {
         try {
             if (DatalistManager) {
-                await DatalistManager.initialize();
+                await DatalistManager.initialize(API);
                 this.modelManager.syncDatalists();
                 DatalistManager.setup(UI_SELECTORS.models.agentInput, "settings-primary-list");
                 DatalistManager.setup(UI_SELECTORS.config.fallbackInput, "settings-fallback-list");

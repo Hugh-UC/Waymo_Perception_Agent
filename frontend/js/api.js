@@ -7,11 +7,6 @@
  * Date: 2026-04-22
  * Version: 0.1
  */
-
-// import authentication manager to handle session checks during boot
-import { AuthManager } from './auth.js';
-
-
 export const API = {
     /**
      * Master internal request router. Handles headers, body serialization, and error throwing.
@@ -138,81 +133,4 @@ export const API = {
      * @returns {Promise<Object>} Object containing an array of available models.
      */
     getModels: () => API._request("/api/models")
-};
-
-export const BootManager = {
-    /**
-     * Acts as the Global Route Gatekeeper. Pings the backend on page load.
-     * Enforces redirects if the user attempts to bypass setup or login.
-     */
-    async initialize() {
-        const currentPath = window.location.pathname;
-        const isIndex = currentPath === '/' || currentPath.endsWith('index.html');
-        
-        try {
-            const status = await API.getStatus();
-
-            if (status.needs_setup) {
-                // RULE 1: if any setup is missing, force the user to index.html
-                if (!isIndex) { 
-                    window.location.href = '/'; 
-                    return; 
-                }
-                
-                // RULE 2: check if the wizard exists before unlocking
-                const wizard = document.getElementById("setup-wizard");
-                if (wizard) {
-                    wizard.classList.remove("hidden");
-                } else {
-                    console.error("Critical: setup-wizard not found in DOM. Python injection bypassed.");
-                }
-                
-                // unlock the wizard overlay and prepopulate forms
-                document.getElementById("setup-wizard").classList.remove("hidden");
-                if (AuthManager) {
-                    AuthManager.initializeWizardState(status);
-                }
-                
-            } else {
-                // RULE 2: setup is 100% complete, check for active session cookie
-                if (!AuthManager || !AuthManager.getSession()) {
-                    
-                    // no session exists, force user to index.html
-                    if (!isIndex) { 
-                        window.location.href = '/'; 
-                        return; 
-                    }
-                    
-                    document.getElementById("login-overlay").classList.remove("hidden");
-                } else {
-                    // RULE 3: valid session confirmed, unlock application container
-                    const app = document.getElementById("app-container");
-                    if (app) {
-                        app.classList.remove("hidden");
-                    }
-                    
-                    const logoutBtn = document.getElementById("btn-logout");
-                    if (logoutBtn) {
-                        logoutBtn.classList.remove("hidden");
-                    }
-
-                    // populate dashboard metrics
-                    if (isIndex) {
-                        try {
-                            const metrics = await API.getDashboardSummary();
-                            const statValues = document.querySelectorAll(".stat-value");
-                            if (statValues.length >= 2) {
-                                statValues[0].textContent = metrics.total_runs;
-                                statValues[1].textContent = metrics.total_sources;
-                            }
-                        } catch (error) {
-                            console.error("Failed to load dashboard metrics:", error);
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("[Boot Error] System initialization failed:", error);
-        }
-    }
 };
