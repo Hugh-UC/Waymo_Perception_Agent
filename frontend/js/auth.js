@@ -8,7 +8,13 @@
  * Version: 0.1
  */
 
-const AuthManager = {
+// import dependencies
+import { API } from './api.js';
+import { NotificationManager } from './tools/utils.js';
+import { DatalistManager } from './datalist.js';
+
+
+export const AuthManager = {
     // ---------------------------------------------------------
     // Session & Cookie Management
     // ---------------------------------------------------------
@@ -177,15 +183,13 @@ const AuthManager = {
     }
 };
 
-window.AuthManager = AuthManager;
-
 // progress controller
 document.addEventListener("DOMContentLoaded", async () => {
     // initialize custom dropdowns (external controller)
-    if (window.DatalistManager) {
-        await window.DatalistManager.initialize();
-        window.DatalistManager.setup("setup-primary-model", "primary-model-list");
-        window.DatalistManager.setup("setup-new-fallback", "fallback-model-list");
+    if (DatalistManager) {
+        await DatalistManager.initialize();
+        DatalistManager.setup("setup-primary-model", "primary-model-list");
+        DatalistManager.setup("setup-new-fallback", "fallback-model-list");
     }
 
     // dashboard scraper trigger controller
@@ -197,14 +201,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             runBtn.style.opacity = "0.7";
             
             try {
-                await window.API.runScraper();
+                await API.runScraper();
                 runBtn.textContent = "Run Scraper Now";
                 runBtn.disabled = false;
                 runBtn.style.opacity = "1";
-                alert("Pipeline Complete! Check the exports/ folder.");
+                NotificationManager.show("Pipeline Complete! Check the exports/ folder.");
                 window.location.reload(); // Refresh to update dashboard numbers
             } catch (error) {
-                alert("Pipeline Failed: " + (error.detail || "Check server logs."));
+                NotificationManager.show("Pipeline Failed: " + (error.detail || "Check server logs."));
                 runBtn.textContent = "Run Scraper Now";
                 runBtn.disabled = false;
                 runBtn.style.opacity = "1";
@@ -263,7 +267,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             // fire the API request, if there is new unmasked data
             if (Object.keys(payload).length > 0) {
-                await window.API.setupKeys(payload);
+                await API.setupKeys(payload);
             }
             // move to next step
             AuthManager.goToStep(2);
@@ -300,11 +304,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         errBox.classList.add("hidden");
 
         try {
-            const config = await window.API.getConfig();
+            const config = await API.getConfig();
             config.agent.model_name = document.getElementById("setup-primary-model").value.trim();
             config.agent.fallback_model = AuthManager.wizardFallbackModels;
             
-            await window.API.updateConfig({ scraper: config.scraper, agent: config.agent });
+            await API.updateConfig({ scraper: config.scraper, agent: config.agent });
             AuthManager.goToStep(3);
         } catch(error) {
             errBox.textContent = "Failed to update params.yaml.";
@@ -329,7 +333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         try {
-            await window.API.registerUser({ username: user, password: pass });
+            await API.registerUser({ username: user, password: pass });
             
             AuthManager.setSession(user);
             
@@ -354,7 +358,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const pass = document.getElementById("login-pass").value;
 
         try {
-            const data = await window.API.loginUser({ username: user, password: pass });
+            const data = await API.loginUser({ username: user, password: pass });
             if (data.authenticated) {
                 AuthManager.setSession(user);
                 loginModal.classList.add("hidden");
@@ -399,7 +403,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.disabled = true;
 
         try {
-            await window.API.factoryReset();
+            await API.factoryReset();
             AuthManager.clearSession(); // Purge old browser token
             window.location.reload();   // Reload to trigger Setup Wizard
         } catch (error) {
@@ -423,7 +427,4 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
     }
-
-    // boot
-    if (window.BootManager) window.BootManager.initialize();
 });
