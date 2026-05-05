@@ -4,6 +4,10 @@
  * Description: Manages data fetching, DOM interactions, and AI Narrative UI.
  */
 
+// import chart rendering class
+import { ChartRenderer } from './tools/ChartRenderer.js';
+
+
 class DashboardController {
     constructor() {
         this.activeCharts = ['trend_analysis', 'city_risk', 'friction_points', 'media_battlefield'];

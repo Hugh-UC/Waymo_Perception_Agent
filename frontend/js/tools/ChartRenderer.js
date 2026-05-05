@@ -7,7 +7,7 @@
 // register official plugin for bubble annotations
 Chart.register(ChartDataLabels);
 
-class ChartRenderer {
+export class ChartRenderer {
     constructor(canvasId) {
         this.canvasId = canvasId;
         this.chartInstance = null;
