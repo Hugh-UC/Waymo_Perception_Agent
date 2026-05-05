@@ -15,6 +15,7 @@
 ### 1. Architecture & Tech Debt
 * **ES6 Module Migration:** Transition the frontend from global scope class declarations to modern ES6 module imports (`import { ChartRenderer } from './tools/ChartRenderer.js'`). This will clean the global namespace, clarify dependencies, and allow modern build tools to optimize the code. Requires updating all `.js` files and HTML `<script type="module">` tags.
 * **Dynamic Data Chunking:** Refactor the backend API and Chart.js frontend to dynamically request specific date ranges (e.g., "Last 60 Days", "Custom Range") rather than loading the entire database into memory, preserving HTML/Python performance as the database scales.
+* **Employee AI Token & Queue System:** Implement a token-based rate limiting and priority system for enterprise users. Managers can assign token quotas to employees to limit scraping sizes/requests, and VIP users can be assigned priority status to jump ahead in the scraping pipeline queue. Requires database schema upgrades and UI management panels.
 
 ---
 
@@ -45,11 +46,27 @@
     * Implement adjustable metrics (`relatability_score`, `individuality_score`) to down-weight low-effort posts or spam.
     * Build an asynchronous PydanticAI / LangGraph Agent to evaluate historical reliability of domains and assign a "Trust Weight".
     * Build a "Sources" UI dashboard for transparency and manual weight overrides.
+* **Agnostic LLM Provider Integration:** Refactor the codebase to transition from hardcoded 'Gemini' references to a generalized 'Model Provider' architecture using PydanticAI. The tool should support any modern LLM API (OpenAI, Anthropic, local models) to ensure enterprise flexibility.
 
 ---
 
 ### 5. Database & Auth Tweaks
 * **Master Admin Security:** Update database schema so the Master Admin ID = 0 (primary key starts at 0). Update user deletion logic to block deletion of ID 0 instead of 1.
+
+---
+
+## Tool Extensions (Extensions/Plugins)
+
+### Legal Extension
+* **Future Client Management Portal Intergration:** This implementation will include refactoring the code as a plugin for a pre-existing (yet to me created) client management portal program developed specifically for the Australian legal system (future: global legal system). It will introduce:
+    * Legislation validation against scraping for potential new legal cases.
+    * Greater Agent checks (for legal president) when scraping new cases.
+    * Suggested Client base generators.
+    * Suggested advertisement avenues.
+    * Advertisement campaign success metrics.
+    * New Potential Cases finder (using AI agents).
+    * Data analytics, normalisation, organisation, representation, and exportation.
+    * More to come...
 
 ---
 
